@@ -84,7 +84,7 @@ function draw() {
     translate(wx, wy);
 
     stroke(200, 50, 50);
-    boidBBox.Draw();
+    //boidBBox.Draw();
     boidBBox.Clear();
     for (var i = 0; i < boids.length; i++) {
         boidBBox.AddObject(boids[i].pos.x, boids[i].pos.y, boids[i]);
