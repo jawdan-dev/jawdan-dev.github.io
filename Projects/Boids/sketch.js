@@ -73,7 +73,7 @@ function changeColor() {
 }
  
 function draw() {
-    background(50);
+    background(150);
 
     seperationStrength = sliderS.value();
     alignmentStrength = sliderA.value();
