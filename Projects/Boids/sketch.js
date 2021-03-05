@@ -112,9 +112,9 @@ function draw() {
 class Boid {
     constructor() {
         var r = Math.random() * 2 * Math.PI;
-        this.colorr = (random() * 155) + 100
-        this.colorg = (random() * 155) + 100
-        this.colorb = (random() * 155) + 100
+        this.colorr = map(random(), 0, 1, 155, 255);
+        this.colorg = map(random(), 0, 1, 155, 255);
+        this.colorb = map(random(), 0, 1, 155, 255);
 
         this.acceleration = new Vector2(0, 0);
         this.velocity = new Vector2(sin(r), cos(r));        
