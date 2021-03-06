@@ -2,15 +2,210 @@
 <html>
   <head>
     <title>Page Title</title>
-    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js?"></script>    
+    <link rel="stylesheet" type="text/css" href="Libraries/code-theme.css" />
   </head>
 
-  <body>
-    <a href="https://jawdan77.github.io/Projects/Boids/index.html">Link Button</a>  
-    <code class="prettyprint">
-      //help me
+  <style>    
+    ::-webkit-scrollbar {
+      height: 12px;
+      width: 12px;
+      background: #2c353d;
+    }
+    ::-webkit-scrollbar-thumb { background: #38424a; }
+    ::-webkit-scrollbar-corner { background: #2c353d; }
+
+    :root {
+      --extraDark: #1d1f21;
+      --dark: #262a2e;
+      --medium: #2c353d;
+      --light: #38424a;
+      --extraLight: #516778;
+      --faded: #788c9c;
+      --highlight: #eb8b31;
+    }
+
+    a {
+        padding: 4px;
+        color: white;
+        background-color: rgba(0, 0, 0, 0.3);  ;
+        text-decoration: none;
+    }
+    a:hover { color: cyan; }    
+    a:active { color: cyan; text-decoration: underline; }
+    
+    body {
+      background-color: var(--faded);
+      color: white;
+      margin: 0%;
+      padding:2px;
+    }
+
+    /* Header */
+    .header {
+      display: block;
+      background: red;
+      
+      margin-bottom: 2px; 
+      padding: 1px;     
+    }
+
+    /* Tutorial */
+    .tutorial {
+      display: block;    
+      
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 0%;
+      margin-bottom: 0px;
+
+      padding: 20px;
+      max-width: 800px;
+      background-color: var(--dark);  
+      text-align: left;    
+    }
+
+    .tutorial h2 {
+      display: block;
+      margin-top: 40px;
+      text-align: center;
+    }    
+    .tutorial h2::before {
+      display: block;
+      content: " ";
+      margin-top: -100px;
+      height: 100px;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .tutorialBookmarks {
+      background-color: #2c353d;
+      display: block;
+      padding: 5%;
+      padding-top: 1%;
+      padding-bottom: 1%;
+    }
+    .tutorialBookmarks a {
+      display: block;
+      padding-top: 4px; 
+      padding-bottom: 4px;
+      margin-top: 3px;
+      margin-bottom: 3px;
+    }
 
 
-    </code>
+    .tutorialImage {
+      display: block;
+      margin: 0%;
+      margin-bottom: 20px;
+      object-fit: fill;
+      width: 100%;
+      height: 100%;
+    }
+
+    .tutorialImageGridRow {
+      display: flex;    
+      background-color: var(--medium);  
+      padding: 4px;
+    }
+    .tutorialImageGridRow div{
+      display: table-cell;
+      padding: 3px;
+      width: 100%;
+    }
+  </style>
+
+  <body onshow="PR.prettyPrint()">    
+    <div id="myHeader" class="header">
+      <a href="Projects/Boids/index.html">Link Button</a>    
+      <P>test 1</P>
+
+      <b style="display: block; padding:2px; background-color: var(--extradark);">var(--extraDark)</b>
+      <b style="display: block; padding:2px; background-color: var(--dark);">var(--dark)</b>
+      <b style="display: block; padding:2px; background-color: var(--medium);">var(--medium)</b>
+      <b style="display: block; padding:2px; background-color: var(--light);">var(--light)</b>
+      <b style="display: block; padding:2px; background-color: var(--extraLight);">var(--extraLight)</b>
+      <b style="display: block; padding:2px; background-color: var(--faded);">var(--faded)</b>
+      <b style="display: block; padding:2px; background-color: var(--highlight);">var(--highlight)</b>
+      <hr>
+    </div>
+        <div class="tutorial">  
+          <h2 style="text-align: center; margin-top: 0;">
+            Contents
+          </h2>
+          <div class="tutorialBookmarks">
+            <hr>
+            <a href="#TitlesAreForHomos">1. Titles Are For Homos</a>
+            <a href="#ReptilesBelongElseWhere">2. Reptiles Belong Else Where</a>        
+            <hr>
+          </div>
+            
+          <h2 id="TitlesAreForHomos">          
+            Titles Are For Homogeneous Species
+            <hr>
+          </h2>
+          <p style="background-color: #38424a; padding: 4px;">          
+              sub heading thats like Hey! check out my discord! my mommy made it for me uwu. <br>
+              okay so like actually, i think this might be rather cool as i like looking at cool thingies, as,, ya kno,,, cool          
+          </p>
+          <p>
+            Test Innit,
+            So i do be thinking donald lookin kinda <b>thicc</b> these days.
+          </p>
+          <p>
+            This is a length test that i am performing because im quite the mad lad and i want to see the maxiumum length i can get in here before the stuff refreshes and all the because im rather curios of the capabilities of this :)
+          </p>
+          <div style="overflow: auto; background-color:var(--extraDark); white-space: nowrap; scrollbar-face-color: red white;">
+            <pre style="display: inline-block; text-align: left; margin: 5px;" class="prettyprint lang-js linenums">
+var colorval = 0;
+var colorstate = 0;
+function changeColor() {
+  for (var i = 0; i < 10; i++) {
+    var s = "test";
+  }
+}
+class Test {
+  constructor(oi oi) {
+    this.x = -125;
+  }
+
+  function Test() { }
+}
+// i kinda wanna die rn, coding is difficult, i now have to make this a bigggg boi </pre>          
+          </div>
+          <h2 id="ReptilesBelongElseWhere">          
+            Im A Slitherry Sneaky Snaaaaake
+            <hr>
+          </h2>
+          <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+
+          
+          <div class="tutorialImageGridRow">
+            <div style="position: relative;">
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+              <div style="display: block; background-color: rgba(255, 255, 255, 0.2); position: absolute; bottom: 3px; left: 50%; text-align: center; transform: translate(-50%, 0%);">curios text</div>
+            </div>            
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
+          </div>
+          <div class="tutorialImageGridRow">
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>            
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
+          </div>
+
+        </div> 
+    <p>test</p>
   </body>
 </html>
