@@ -22,29 +22,51 @@
       --light: #38424a;
       --extraLight: #516778;
       --faded: #788c9c;
-      --highlight: #eb8b31;
+      --highlight: #eb5031;
+      --insetColor: black;
     }
 
+    h2 { font: 24px Verdana, monospace; }
+    p { font: 14px Verdana, monospace; }
     a {
-        padding: 4px;
-        color: white;
-        background-color: rgba(0, 0, 0, 0.3);  ;
-        text-decoration: none;
+      font: 18px Verdana, monospace;
+      padding: 4px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.3);  ;
+      text-decoration: none;
     }
     a:hover { color: cyan; }    
     a:active { color: cyan; text-decoration: underline; }
-    
+    a.highlight {border:1px solid red;}    
+    a:target  h2 {
+      animation: targeth2 3s ;
+    }
+
     body {
       background-color: var(--faded);
       color: white;
       margin: 0%;
       padding:2px;
     }
+    /* General */
+    .flexSpace {
+      display: flex;
+      justify-content: space-evenly;
+    }
+    .insetStyle { box-shadow: 0px 0px 3px inset var(--insetColor); }
+    .insetSpace {
+      display: block;
+      background-color: var(--extraDark);
+      padding: 6px;
+      text-align: center;
+      box-shadow: 0px 0px 3px inset var(--insetColor);
+      height: fit-content;
+    }    
 
     /* Header */
     .header {
       display: block;
-      background: red;
+      background: var(--medium);
       
       margin-bottom: 2px; 
       padding: 1px;     
@@ -60,7 +82,7 @@
       margin-bottom: 0px;
 
       padding: 20px;
-      max-width: 800px;
+      max-width: 1050px;
       background-color: var(--dark);  
       text-align: left;    
     }
@@ -80,7 +102,7 @@
     }
 
     .tutorialBookmarks {
-      background-color: #2c353d;
+      background-color: var(--medium);
       display: block;
       padding: 5%;
       padding-top: 1%;
@@ -97,23 +119,38 @@
 
     .tutorialImage {
       display: block;
-      margin: 0%;
-      margin-bottom: 20px;
+      margin: 0;
       object-fit: fill;
       width: 100%;
       height: 100%;
     }
+    .tutorial img {      
+      margin-bottom: 20px;
+    }
 
-    .tutorialImageGridRow {
-      display: flex;    
+    /* a grid editor would be nice. as you specify w,h of grid and x,y,w,h of images, quite pog*/
+    .tutorialImageGrid { 
       background-color: var(--medium);  
-      padding: 4px;
+      display: grid;
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
+      grid-template-columns: repeat(3, 1fr);
+    }    
+
+    .tutorialImageGridBox1 {
+      grid-column-start: 1;
+      grid-column-end: 4;
+      grid-row-start: 1;
+      grid-row-end: 3;
     }
-    .tutorialImageGridRow div{
-      display: table-cell;
-      padding: 3px;
-      width: 100%;
+    .tutorialImageGridBox2 {
+      grid-column-start: 1;
+      grid-column-end: 3;
+      grid-row-start: 3;
+      grid-row-end: 5;
     }
+
+
   </style>
 
   <body onshow="PR.prettyPrint()">    
@@ -121,7 +158,7 @@
       <a href="Projects/Boids/index.html">Link Button</a>    
       <P>test 1</P>
 
-      <b style="display: block; padding:2px; background-color: var(--extradark);">var(--extraDark)</b>
+      <b style="display: block; padding:2px; background-color: var(--extraDark);">var(--extraDark)</b>
       <b style="display: block; padding:2px; background-color: var(--dark);">var(--dark)</b>
       <b style="display: block; padding:2px; background-color: var(--medium);">var(--medium)</b>
       <b style="display: block; padding:2px; background-color: var(--light);">var(--light)</b>
@@ -131,12 +168,12 @@
       <hr>
     </div>
         <div class="tutorial">  
-          <h2 style="text-align: center; margin-top: 0;">
-            Contents
-          </h2>
           <div class="tutorialBookmarks">
+            <h2 style="text-align: center; margin-top: 0;">
+              Contents
+            </h2>
             <hr>
-            <a href="#TitlesAreForHomos">1. Titles Are For Homos</a>
+            <a href="#TitlesAreForHomos">1. Titles Are For Homos (like the genes, dont hate me plz)</a>
             <a href="#ReptilesBelongElseWhere">2. Reptiles Belong Else Where</a>        
             <hr>
           </div>
@@ -156,8 +193,8 @@
           <p>
             This is a length test that i am performing because im quite the mad lad and i want to see the maxiumum length i can get in here before the stuff refreshes and all the because im rather curios of the capabilities of this :)
           </p>
-          <div style="overflow: auto; background-color:var(--extraDark); white-space: nowrap; scrollbar-face-color: red white;">
-            <pre style="display: inline-block; text-align: left; margin: 5px;" class="prettyprint lang-js linenums">
+          <div class="insetStyle" style="overflow: auto; background-color:var(--extraDark); white-space: nowrap; scrollbar-face-color: red white;">
+            <pre style="display: inline-block; text-align: left; margin: 5px; " class="prettyprint lang-js linenums">
 var colorval = 0;
 var colorstate = 0;
 function changeColor() {
@@ -178,31 +215,48 @@ class Test {
             Im A Slitherry Sneaky Snaaaaake
             <hr>
           </h2>
-          <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+          <div class="flexSpace">
+            <div style="width: 60%;">
+              <p>With time, the game evolved, factories were growing, and subsequently the number of train kept going up. The insufficiency of the GUI became very clear during our internal 1.1 playtesting. We played for a whole week and extensively used the new train limits. We had over 100 trains and over 200 train stops.
+              </p>
+              <p>Once we finished I asked the rest of the team "Did anybody opened the Trains GUI even once?". The answer was "No".
+              </p>
+              <p>While playtesting I also became highly familiar with what features I wished the Trains GUI had, and what questions it should answer:
+              </p>
+              <ul>
+                <li>How many trains do we have?</li>
+                <li>How many stops do we have?</li>
+                <li>What is the cumulative train limit of all the stops of a certain name?</li>
+                <li>Am I keeping up with the demand for the given item?</li>
+                <li>And mainly, do I have enough trains for this route?</li>
+                <li>With all this in mind, I got to work on the new Trains GUI.</li> 
+              </ul>
+            </div>
+            <div style="width: 40%;">
+              <div class="insetSpace">
+                <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+                Image 1.4 - Horizon Zero Dawn [North of Tribe]
+              </div>
+            </div>
+          </div>
 
           
-          <div class="tutorialImageGridRow">
+          <div class="tutorialImageGrid">
+            <div class="tutorialImageGridBox1" style="position: relative;">
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+              <div style="display: block; background-color: rgba(255, 255, 255, 0.2); position: absolute; bottom: 3px; left: 50%; text-align: center; transform: translate(-50%, 0%);">curios text</div>
+            </div>            
+            <div class="tutorialImageGridBox2">
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
+            <div>
+              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
+            </div>
             <div style="position: relative;">
               <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
               <div style="display: block; background-color: rgba(255, 255, 255, 0.2); position: absolute; bottom: 3px; left: 50%; text-align: center; transform: translate(-50%, 0%);">curios text</div>
             </div>            
-            <div>
-              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
-            </div>
-            <div>
-              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
-            </div>
-          </div>
-          <div class="tutorialImageGridRow">
-            <div>
-              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
-            </div>            
-            <div>
-              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
-            </div>
-            <div>
-              <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
-            </div>
+           
           </div>
 
         </div> 
