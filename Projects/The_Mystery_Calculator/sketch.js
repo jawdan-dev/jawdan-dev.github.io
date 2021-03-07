@@ -102,7 +102,7 @@ function drawCalculator(arr) {
         var halfW = (windowWidth / 2) - (maxWidth / 2);
 
         for (var i = 0; i < arr.length; i++) {
-            drawCalculatorCell(i, halfW, 50 + (i * scl * (rows + 2.6)), wFac, rows, arr[0], maxStringLength);
+            drawCalculatorCell(i, halfW, 50 + (i * scl * (rows + 2.6)), wFac, rows, arr[i], maxStringLength);
         }
 
         minHeight = (arr.length * scl * (rows + 2.6)) + 200;
