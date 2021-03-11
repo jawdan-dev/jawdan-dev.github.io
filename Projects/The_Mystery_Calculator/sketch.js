@@ -46,7 +46,7 @@ function draw() {
         noStroke();
         fill(255);
         textSize(12);
-        text("Enter the max value you require in the box on the left [this rounded up to the nearest 2^X == N]\nThe complete set consists of X cards with a series of numbers.\nAsk a friend to select a number between 1-N, without telling you.\nThen show them the cards and ask them which cards their number appears on.\nOnce this is done, add together the first digit of all of the cards their number appeared on together and the result is their number.", 245, 10);
+        text("Enter the max value you require in the box on the left [this rounded up to the nearest 2^X - 1 == N]\nThe complete set consists of X cards with a series of numbers.\nAsk a friend to select a number between 1-N, without telling you.\nThen show them the cards and ask them which cards their number appears on.\nOnce this is done, add together the first digit of all of the cards their number appeared on together and the result is their number.", 245, 10);
     }
 }
 function mouseWheel() {
@@ -127,7 +127,7 @@ function drawCalculatorCell(cellIndex, x, y, wFac, r, arr, maxStringLength) {
     noStroke();
     fill(255);
 
-    text("Card " + cellIndex.toString(), x + (maxWidth / 2), y + 5);
+    text("Card " + (cellIndex + 1).toString(), x + (maxWidth / 2), y + 5);
 
     for (var row = 0; row < r; row++) {
         var off = row * inc;
