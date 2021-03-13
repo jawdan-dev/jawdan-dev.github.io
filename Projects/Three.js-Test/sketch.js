@@ -30,7 +30,6 @@ function draw(deltaTime) {
     cube2.rotation.x -= 1.2 * deltaTime;
     cube2.rotation.y -= 1.2 * deltaTime;
 
-    renderer.render(scene, camera);
 };
 
 
@@ -41,12 +40,14 @@ document.body.appendChild(stats.dom);
 let deltaTimeThen = 0;
 function __draw(deltaTimeNow) {    
 	stats.begin();
-    deltaTimeNow *= 0.001;
 
+    deltaTimeNow *= 0.001;
     const deltaTime = deltaTimeNow - deltaTimeThen;
     deltaTimeThen = deltaTimeNow;
 
     draw(deltaTime);
+    renderer.render(scene, camera);
+
 	stats.end();
     requestAnimationFrame(__draw); 
 }
