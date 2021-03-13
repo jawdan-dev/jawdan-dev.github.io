@@ -28,11 +28,11 @@ camera.position.z = 5;
 function draw() {
     requestAnimationFrame(draw);
 
-    cube.rotation.x += 0.011;
-    cube.rotation.y += 0.011;
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
 
-    cube2.rotation.x -= 0.012;
-    cube2.rotation.y -= 0.012;
+    cube2.rotation.x -= 0.01;
+    cube2.rotation.y -= 0.01;
 
     renderer.render(scene, camera);
 };
