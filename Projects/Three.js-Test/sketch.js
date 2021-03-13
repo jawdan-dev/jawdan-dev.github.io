@@ -25,10 +25,10 @@ scene.add(cube2);
 camera.position.z = 5;
 
 function draw(deltaTime) { 
-    cube.rotation.y  += 1.5 * deltaTime;
-    cube.rotation.x  += 1.5 * deltaTime;
-    cube2.rotation.x -= 1.5 * deltaTime;
-    cube2.rotation.y -= 1.5 * deltaTime;
+    cube.rotation.y  += 1.2 * deltaTime;
+    cube.rotation.x  += 1.2 * deltaTime;
+    cube2.rotation.x -= 1.2 * deltaTime;
+    cube2.rotation.y -= 1.2 * deltaTime;
 
     renderer.render(scene, camera);
 };
