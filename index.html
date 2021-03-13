@@ -298,9 +298,26 @@ class Test {
               <img class="tutorialImage" src="Tutorial/2021-03-05-Test-Case/Background 4.png" alt="Working Examples">
               <div style="display: block; background-color: rgba(255, 255, 255, 0.2); position: absolute; bottom: 3px; left: 50%; text-align: center; transform: translate(-50%, 0%);">curios text</div>
             </div>
+
+            <img src="Projects/Boids/hoverTest.png" previewLocation="Projects/Boids/hoverTest">
           </div>
 
         </div> 
     <p>test</p>
   </body>
+
+  <script>
+    $(function() {
+      $(".gifPreview").hover(
+        function() {
+          var src = $(this).attr("src");
+          $(this).attr("src", src.substring(0, src.length - 4) + ".gif");
+        },
+        function() {
+          var src = $(this).attr("src");
+          $(this).attr("src", src.substring(0, src.length - 4) + ".png");
+        }
+      )
+    })
+  </script>
 </html>
