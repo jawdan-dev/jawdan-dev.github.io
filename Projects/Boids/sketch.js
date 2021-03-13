@@ -162,8 +162,8 @@ class Boid {
 
         var total = new Vector2(0, 0);
         if (fromCenter.Magnitude() < seperationDist) {
-            total = fromCenter.Normal().Divide(fromCenter.Magnitude()).Multiply(cursorSeperationStrength);
-        }
+            total = fromCenter.Normal().Divide(fromCenter.Magnitude()).Multiply(cursorSeperationStrength);                   
+        } 
         var count = 1;
         for (var i = 0; i < boidArray.length; i++) {
             var b = boidArray[i];
