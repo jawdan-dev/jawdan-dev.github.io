@@ -1,5 +1,5 @@
-window.addEventListener( 'resize', onWindowResize, false );
-function onWindowResize(){
+window.addEventListener('resize', onWindowResize, false);
+function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
@@ -34,14 +34,20 @@ function draw(deltaTime) {
 };
 
 
+var stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
+
 let deltaTimeThen = 0;
 function __draw(deltaTimeNow) {    
+	stats.begin();
     deltaTimeNow *= 0.001;
 
     const deltaTime = deltaTimeNow - deltaTimeThen;
     deltaTimeThen = deltaTimeNow;
 
     draw(deltaTime);
+	stats.end();
     requestAnimationFrame(__draw); 
 }
 requestAnimationFrame(__draw); 
