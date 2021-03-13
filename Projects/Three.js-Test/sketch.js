@@ -24,16 +24,24 @@ scene.add(cube2);
 
 camera.position.z = 5;
 
-
-function draw() {
-    requestAnimationFrame(draw);
-
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-
-    cube2.rotation.x -= 0.01;
-    cube2.rotation.y -= 0.01;
+function draw(deltaTime) { 
+    cube.rotation.y  += 1.5 * deltaTime;
+    cube.rotation.x  += 1.5 * deltaTime;
+    cube2.rotation.x -= 1.5 * deltaTime;
+    cube2.rotation.y -= 1.5 * deltaTime;
 
     renderer.render(scene, camera);
 };
-draw();
+
+
+let deltaTimeThen = 0;
+function __draw(deltaTimeNow) {    
+    deltaTimeNow *= 0.001;
+
+    const deltaTime = deltaTimeNow - deltaTimeThen;
+    deltaTimeThen = deltaTimeNow;
+
+    draw(deltaTime);
+    requestAnimationFrame(__draw); 
+}
+requestAnimationFrame(__draw); 
