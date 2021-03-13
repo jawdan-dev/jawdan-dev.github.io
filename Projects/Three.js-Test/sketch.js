@@ -29,7 +29,6 @@ function draw(deltaTime) {
     cube.rotation.x  += 1.2 * deltaTime;
     cube2.rotation.x -= 1.2 * deltaTime;
     cube2.rotation.y -= 1.2 * deltaTime;
-
 };
 
 
