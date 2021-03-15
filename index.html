@@ -35,7 +35,9 @@
     <script>
       $(function() {
         /*  */
-        $("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html"); 
+        $("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html", function(data) {
+          $(this).append(data);
+        }); 
         
         /* LOW-KEY FORMATTING */
         var totalHeaders = 0;
