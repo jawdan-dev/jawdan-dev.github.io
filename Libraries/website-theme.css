@@ -1,0 +1,135 @@
+::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+  background: #2c353d;
+}
+::-webkit-scrollbar-thumb { background: #38424a; }
+::-webkit-scrollbar-corner { background: #2c353d; }
+
+:root {
+  --extraDark: #1d1f21;
+  --dark: #262a2e;
+  --medium: #2c353d;
+  --light: #38424a;
+  --extraLight: #516778;
+  --faded: #788c9c;
+  --highlight: #ff0000;
+  --insetColor: black;
+}
+
+h2 { font: 24px Verdana, monospace; }
+p { font: 14px Verdana, monospace; margin-top: 8px; margin-bottom: 8px;}
+a {
+  font: 18px Verdana, monospace;
+  padding: 4px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.3);  ;
+  text-decoration: none;
+}
+a:hover { color: cyan; }    
+a:active { color: cyan; text-decoration: underline; }
+a.highlight {border:1px solid red;}    
+a:target  h2 {
+  animation: targeth2 3s ;
+}
+
+body {
+  background-color: var(--faded);
+  color: white;
+  margin: 0%;
+  padding:0px; /*2px*/
+}
+/* General */
+.flexSpace {
+  display: flex;
+  justify-content: space-evenly;
+}
+.insetStyle { box-shadow: 0px 0px 3px inset var(--insetColor); }
+.insetSpace {
+  display: block;
+  background-color: var(--extraDark);
+  padding: 6px;
+  text-align: center;
+  box-shadow: 0px 0px 3px inset var(--insetColor);
+  height: fit-content;
+}    
+/* Header */
+.header {
+  display: block;
+  background: var(--medium);
+  
+  margin-bottom: 2px; 
+  padding: 1px;     
+}
+/* Tutorial */
+.tutorial {
+  display: block;    
+  
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0%;
+  margin-bottom: 0px;
+  padding: 20px;
+  max-width: 1050px;
+  background-color: var(--dark);  
+  text-align: left;    
+}
+.tutorial h2 {
+  display: block;
+  margin-top: 40px;
+  text-align: center;
+}    
+.tutorial h2::before {
+  display: block;
+  content: " ";
+  margin-top: -100px;
+  height: 100px;
+  visibility: hidden;
+  pointer-events: none;
+}
+.tutorialBookmarks {
+  background-color: var(--medium);
+  display: block;
+  padding: 5%;
+  padding-top: 1%;
+  padding-bottom: 1%;
+}
+.tutorialBookmarks a {
+  display: block;
+  padding-top: 4px; 
+  padding-bottom: 4px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
+.tutorialImage {
+  display: block;
+  margin: 0;
+  object-fit: fill;
+  width: 100%;
+  height: 100%;
+}
+
+.tutorial img {      
+  margin-bottom: 10px;
+}
+
+/* a grid editor would be nice. as you specify w,h of grid and x,y,w,h of images, quite pog*/
+.tutorialImageGrid { 
+  background-color: var(--medium);  
+  display: grid;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  grid-template-columns: repeat(3, 1fr);
+}    
+.tutorialImageGridBox1 {
+  grid-column-start: 1;
+  grid-column-end: 4;
+  grid-row-start: 1;
+  grid-row-end: 3;
+}
+.tutorialImageGridBox2 {
+  grid-column-start: 1;
+  grid-column-end: 3;
+  grid-row-start: 3;
+  grid-row-end: 5;
+}
