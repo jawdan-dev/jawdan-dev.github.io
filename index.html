@@ -9,12 +9,7 @@
     <link rel="stylesheet" type="text/css" href="Libraries/website-theme.css">
   </head>
 
-  <body onshow="PR.prettyPrint()">    
-    <!--
-    <div style="width: 100%; height: 1000px;">      
-      <iframe style="width:100%; height:100%; border: none;" src="https://jawdan77.github.io/Projects/Boids/"></iframe>         
-    </div>
-    -->
+  <body>    
     <div id="myHeader" class="header">
       <a href="Projects/Boids">Link Button</a>    
       <P>test 1</P>
@@ -28,28 +23,38 @@
       <b style="display: block; padding:2px; background-color: var(--highlight);">var(--highlight)</b>
       <hr>
     </div>    
-    <div id="includedContent" class="tutorial" height=100%>  
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    <div id="includedContent" class="tutorial">  
+      <div class="tutorialBookmarks">
+        <h2 style="margin-top: 0;">
+          Contents
+        </h2>
+        <hr>        
+      </div>    
     </div> 
-    <p>test</p>
-
-    </iframe>
 
     <script>
       $(function() {
+        /*  */
+        $("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html"); 
         
+        /* LOW-KEY FORMATTING */
+        var totalHeaders = 0;
+        $("h2").each(function() {
+          console.log($(this).text());
+
+          console.log(totalHeaders)
+          if (totalHeaders > 0) {
+            $(this).append("<hr>");
+            var header = $(this);
+            $(".tutorialBookmarks").append("<a href=#Heading" + totalHeaders.toString() + ">" + header.text() + "</a>");
+            $(this).attr("id", "Heading" + totalHeaders.toString());
+          }
+          totalHeaders++;
+        });
+        $(".tutorialBookmarks").append("<hr>")
+
+        /* FORMATTING */
+        PR.prettyPrint()
         $(".gifPreview").hover(
           function() {
             var src = $(this).attr("src");
@@ -62,8 +67,6 @@
             console.log("png'd up");
           }
         );
-
-        $("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html"); 
       });
       
 
