@@ -5,7 +5,7 @@ $(function() {
       url: "https://jawdan77.github.io/Template/Template.html",
       async: false,
       success : function(data) {
-        $(".tutorial").append(data);
+        $("html").append(data);
       }        
     });
     $(".tutorial").append($(".content"))
