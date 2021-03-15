@@ -34,17 +34,22 @@
 
     <script>
       $(function() {
-        /*  */
-        $("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html", function(data) {
-          $(this).append(data);
-        }); 
+        /* LOAD ALL STUFF */    
+        $.ajax({type: "GET",
+          url: "Tutorial/2021-03-05-Test-Case/index.html",
+          async: false,
+          success : function(data) {
+            $("#includedContent").append(data);
+          }        
+        });
+        
+        //$("#includedContent").load("Tutorial/2021-03-05-Test-Case/index.html", function(data) {
+        //  $(this).append(data);
+        //}); 
         
         /* LOW-KEY FORMATTING */
         var totalHeaders = 0;
         $("h2").each(function() {
-          console.log($(this).text());
-
-          console.log(totalHeaders)
           if (totalHeaders > 0) {
             $(this).append("<hr>");
             var header = $(this);
