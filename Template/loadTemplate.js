@@ -1,5 +1,3 @@
-<script src="Libraries/jquery-3.6.0.min.js"> </script>    
-
 $(function() {
     /* LOAD ALL STUFF */    
     // this need to do some stuff innit
