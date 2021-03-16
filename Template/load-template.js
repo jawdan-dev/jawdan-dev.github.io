@@ -26,7 +26,6 @@ $(function() {
             async: false,
             success : function(data) {
               $(document.head).append(data);
-              prettyPrint();
             }    
           });
         }    
