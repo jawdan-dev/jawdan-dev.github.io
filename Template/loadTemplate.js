@@ -10,7 +10,8 @@ $(function() {
     //});
     let bodyContent = $(document.body).contents();
     console.log(bodyContent);
-    $(document.body).load("https://jawdan77.github.io/Template/Template.html");
+    $(document.head).load("https://jawdan77.github.io/Template/Head.html");
+    $(document.body).load("https://jawdan77.github.io/Template/Body.html");
     console.log(bodyContent);
     $(".tutorial").append(bodyContent);
     $(".tutorial").append($(".content"))
