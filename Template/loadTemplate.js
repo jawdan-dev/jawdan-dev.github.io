@@ -1,13 +1,18 @@
 $(function() {
     /* LOAD ALL STUFF */    
     // this need to do some stuff innit
-    $.ajax({type: "GET",
-      url: "https://jawdan77.github.io/Template/Template.html",
-      async: false,
-      success : function(data) {
-        $("html").append(data);
-      }        
-    });
+    //$.ajax({type: "GET",
+    //  url: "https://jawdan77.github.io/Template/Template.html",
+    //  async: false,
+    //  success : function(data) {
+    //    $("html").append(data);
+    //  }        
+    //});
+    let bodyContent = $(document.body).contents();
+    console.log(bodyContent);
+    $(document.body).load("https://jawdan77.github.io/Template/Template.html");
+    console.log(bodyContent);
+    $(".tutorial").append(bodyContent);
     $(".tutorial").append($(".content"))
 
     /* LOW-KEY FORMATTING */
@@ -24,7 +29,7 @@ $(function() {
     $(".tutorialBookmarks").append("<hr>")
 
     /* FORMATTING */
-    PR.prettyPrint()
+    //PR.prettyPrint()
     $(".gifPreview").hover(
       function() {
         var src = $(this).attr("src");
