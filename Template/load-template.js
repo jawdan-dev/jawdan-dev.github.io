@@ -47,5 +47,5 @@ $(function() {
         console.log("png'd up");
       }
     );
-    //PR.prettyPrint()
+    PR.prettyPrint();
 });
