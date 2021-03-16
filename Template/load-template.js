@@ -58,4 +58,6 @@ $(function() {
         console.log("png'd up");
       }
     );    
+
+    $(document.body).css("display", "block");
 });
