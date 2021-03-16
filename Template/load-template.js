@@ -10,7 +10,16 @@ $(function() {
     //});
     let bodyContent = $(document.body).contents();
     
-    $(document.head).load("https://jawdan77.github.io/Template/Head.html");
+    //$(document.head).load("https://jawdan77.github.io/Template/Head.html");
+
+    $.ajax({
+        type: "GET",
+        url: "https://jawdan77.github.io/Template/Head.html",
+        async: false,
+        success : function(data) {
+            $(document.head).append(data);
+        }    
+    });
     $.ajax({
         type: "GET",
         url: "https://jawdan77.github.io/Template/Body.html",
@@ -18,6 +27,7 @@ $(function() {
         success : function(data) {
             $(document.body).append(data);
             $(".tutorial").append(bodyContent); 
+            PR.prettyPrint();
         }    
     });
 
@@ -46,6 +56,5 @@ $(function() {
         $(this).attr("src", src.substring(0, src.length - 4) + ".png");
         console.log("png'd up");
       }
-    );
-    PR.prettyPrint();
+    );    
 });
