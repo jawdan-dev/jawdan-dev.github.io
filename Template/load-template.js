@@ -1,25 +1,13 @@
 $(function() {
-    /* LOAD ALL STUFF */    
-    // this need to do some stuff innit
-    //$.ajax({type: "GET",
-    //  url: "https://jawdan77.github.io/Template/Template.html",
-    //  async: false,
-    //  success : function(data) {
-    //    $("html").append(data);
-    //  }        
-    //});
+    /* LOAD ALL STUFF */   
     let bodyContent = $(document.body).contents();
-    
-    //$(document.head).load("https://jawdan77.github.io/Template/Head.html");
-
     $.ajax({
         type: "GET",
         url: "https://jawdan77.github.io/Template/Body.html",
         async: false,
         success : function(data) {
           $(document.body).append(data);
-          $(".tutorial").append(bodyContent); 
-          
+          $(".tutorial").append(bodyContent);           
           $.ajax({
             type: "GET",
             url: "https://jawdan77.github.io/Template/Head.html",
