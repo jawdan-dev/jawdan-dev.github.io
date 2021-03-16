@@ -14,20 +14,21 @@ $(function() {
 
     $.ajax({
         type: "GET",
-        url: "https://jawdan77.github.io/Template/Head.html",
-        async: false,
-        success : function(data) {
-            $(document.head).append(data);
-        }    
-    });
-    $.ajax({
-        type: "GET",
         url: "https://jawdan77.github.io/Template/Body.html",
         async: false,
         success : function(data) {
-            $(document.body).append(data);
-            $(".tutorial").append(bodyContent); 
-            PR.prettyPrint();
+          $(document.body).append(data);
+          $(".tutorial").append(bodyContent); 
+          
+          $.ajax({
+            type: "GET",
+            url: "https://jawdan77.github.io/Template/Head.html",
+            async: false,
+            success : function(data) {
+              $(document.head).append(data);
+              PR.prettyPrint();
+            }    
+          });
         }    
     });
 
