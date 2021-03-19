@@ -44,5 +44,8 @@ $(function() {
         $(this).attr("src", src.substring(0, src.length - 4) + ".png");
         console.log("png'd up");
       }
-    );    
+    );  
+    
+    
+    
 });
