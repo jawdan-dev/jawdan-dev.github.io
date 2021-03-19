@@ -7,12 +7,12 @@ $(function() {
 
     let bodyContent = $(document.body).contents();
     $.loadHTML("https://jawdan77.github.io/Template/Raw-HTML/Header.html", function(data) { 
-        $(document.head).append(data);
+        $(document.body).append(data);
     });     
     $.loadHTML("https://jawdan77.github.io/Template/Raw-HTML/Base.html", function(data) {   
         $(document.body).append(data);
         $.loadHTML("https://jawdan77.github.io/Template/Raw-HTML/Bookmark.html", function(data) { 
-            $(document.head).append(data);
+            $(".tutorial").append(data);
         });       
         $(".tutorial").append(bodyContent);    
         
