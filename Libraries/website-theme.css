@@ -87,14 +87,14 @@ body {
   visibility: hidden;
   pointer-events: none;
 }
-.tutorialBookmarks {
+.bookmark {
   background-color: var(--medium);
   display: block;
   padding: 5%;
   padding-top: 1%;
   padding-bottom: 1%;
 }
-.tutorialBookmarks a {
+.bookmark a {
   display: block;
   padding-top: 4px; 
   padding-bottom: 4px;
