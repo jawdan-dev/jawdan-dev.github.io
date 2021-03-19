@@ -1,4 +1,4 @@
-$.loadScript("https://jawdan77.github.io/Libraries/prettify.js");
+//$.loadScript("https://jawdan77.github.io/Libraries/prettify.js");
 
 $(function() {
     $.loadHTML("https://jawdan77.github.io/Template/Raw-HTML/Style.html", function(data) { 
