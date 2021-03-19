@@ -1,23 +1,23 @@
 $(function() {
     /* LOAD ALL STUFF */   
-    let bodyContent = $(document.body).contents();
-    $.ajax({
-        type: "GET",
-        url: "https://jawdan77.github.io/Template/Body.html",
-        async: false,
-        success : function(data) {
-          $(document.body).append(data);
-          $(".tutorial").append(bodyContent);           
-          $.ajax({
-            type: "GET",
-            url: "https://jawdan77.github.io/Template/Head.html",
-            async: false,
-            success : function(data) {
-              $(document.head).append(data);
-            }    
-          });
-        }    
-    });
+    //let bodyContent = $(document.body).contents();
+    //$.ajax({
+    //    type: "GET",
+    //    url: "https://jawdan77.github.io/Template/Body.html",
+    //    async: false,
+    //    success : function(data) {
+    //      $(document.body).append(data);
+    //      $(".tutorial").append(bodyContent);           
+    //      $.ajax({
+    //        type: "GET",
+    //        url: "https://jawdan77.github.io/Template/Head.html",
+    //        async: false,
+    //        success : function(data) {
+    //          $(document.head).append(data);
+    //        }    
+    //      });
+    //    }    
+    //});
 
     /* LOW-KEY FORMATTING */
     var totalHeaders = 0;
