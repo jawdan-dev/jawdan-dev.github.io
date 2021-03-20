@@ -4,12 +4,12 @@ $("h2").each(function() {
   if (totalHeaders > 0) {
     $(this).append("<hr>");
     var header = $(this);
-    $(".bookmarks").append("<a href=#Heading" + totalHeaders.toString() + ">" + header.text() + "</a>");
+    $(".bookmark").append("<a href=#Heading" + totalHeaders.toString() + ">" + header.text() + "</a>");
     $(this).attr("id", "Heading" + totalHeaders.toString());
   }
   totalHeaders++;
 });
-$(".bookmarks").append("<hr>")
+$(".bookmark").append("<hr>")
 
 ///* FORMATTING */
 $(".gifPreview").hover(
