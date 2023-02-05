@@ -1,6 +1,6 @@
 ---
 permalink: /index.html
-sitelink: https://jawdan77.github.io
+sitelink: https://jawdan-dev.github.io
 ---
 # website-test
 so like
