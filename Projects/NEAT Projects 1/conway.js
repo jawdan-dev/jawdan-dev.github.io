@@ -74,12 +74,14 @@ function draw() {
     let barborder = 3;
     let midborder = 2;
 
+    let htarget = windowHeight - (border * 2);
+
     let bestFit = best.getCurrentGridFitness() / maxFitness;
-    let besth = (windowWidth / 2 - (border * 2)) * bestFit;
-    let bestfittot = (windowWidth / 2 - (border * 2)) * (best.totalFitness / (maxFitness * iterationCount));
+    let besth = htarget * bestFit;
+    let bestfittot = htarget * (best.totalFitness / (maxFitness * iterationCount));
     let bestFit2 = best2.getCurrentGridFitness() / maxFitness;
-    let besth2 = (windowWidth / 2 - (border * 2)) * bestFit2;
-    let bestfittot2 = (windowWidth / 2 - (border * 2)) * (best2.totalFitness / (maxFitness * iterationCount));
+    let besth2 = htarget * bestFit2;
+    let bestfittot2 = htarget * (best2.totalFitness / (maxFitness * iterationCount));
 
     best.grid.draw(border, border, windowWidth/2 - (border * 2), windowHeight - (border * 2));
     best2.grid.draw(windowWidth / 2 + border, border, windowWidth/2 - (border * 2), windowHeight - (border * 2));
