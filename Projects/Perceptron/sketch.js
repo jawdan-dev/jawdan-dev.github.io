@@ -1,7 +1,7 @@
 
-const hillslide = false;
+const hillslide = true;
 
-const learningRate = hillslide ? 0.2 : 0.02;
+const learningRate = hillslide ? 0.2 : 0.04;
 const class1 = 1;
 const class2 = hillslide ? 0 : -1;
 
@@ -20,7 +20,7 @@ function setup() {
     canvas = createCanvas(windowWidth, windowHeight);
     canvas.position(0, 0);
 
-    frameRate(10);
+    frameRate(20);
 }
 
 function activationFunction(value) {    
@@ -45,12 +45,14 @@ class Perceptron {
     }
     train(learningData) {
         let errorSum = [];
+        for (let i = 0; i < this.size; i++) {
+            errorSum[i] = 0;
+        }
 
+        //let n = Math.floor(Math.random() * learningData.length);
 
-        let index = Math.floor(Math.random() * learningData.length);
-
-        //for (let n = 0; n < learningData.length; n++) {
-            let data = learningData[index];
+        for (let n = 0; n < learningData.length; n++) {
+            let data = learningData[n];
 
             let tdata = [];
             for (let i = 0; i < data.length - 1; i++) {
@@ -61,21 +63,20 @@ class Perceptron {
 
             let out = 0;
             for (let i = 0; i < tdata.length; i++) {
-                errorSum[i] = 0;
                 out += this.w[i] * tdata[i];
             }
 
-            let dif = (target - activationFunction(out));
+            let value = activationFunction(out);
+            let dif = (target - value);
 
             for (let i = 0; i < tdata.length; i++) {
                 if (dif > 0) {
                     errorSum[i] += tdata[i];
                 } else if (dif < 0) {
-                    errorSum[i] += -tdata[i];
+                    errorSum[i] -= tdata[i];
                 }
             }
-        //}
-
+        }
 
         for (let i = 0; i < this.size && i < errorSum.length; i++) {
             this.w[i] += errorSum[i] * learningRate;
@@ -113,13 +114,13 @@ function draw() {
 
             let ax = x + minRange;
             let ay = y + minRange;
-            let value = activationFunction(perc.feed([ax, ay]));
+            let value = (perc.feed([ax, ay]));
 
 
             if (value > 0) {
                 fill(0, 150 * value, 255 * value);
             } else {
-                if (hillslide) {
+                if (false && hillslide) {
                     value = -1;
                 }
                 fill(255 * -value, 150 * -value, 0);
