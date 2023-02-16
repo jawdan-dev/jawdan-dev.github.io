@@ -1,11 +1,17 @@
-const learningRate = 0.05;
+
+const hillslide = false;
+
+const learningRate = hillslide ? 0.2 : 0.02;
+const class1 = 1;
+const class2 = hillslide ? 0 : -1;
+
 const learningData = [
-    [0.1, 0.75, 1],
-    [0.4, 0.6, 1],
-    [0.75, 0.6, -1],
-    [0.15, 0.25, -1],
-    [0.2, 0.4, 1],
-    [0.6, 0.35, -1]
+    [0.1, 0.75, class2],
+    [0.4, 0.6, class2],
+    [0.75, 0.6, class1],
+    [0.15, 0.25, class1],
+    [0.2, 0.4, class2],
+    [0.6, 0.35, class1]
 ];
 
 var canvas;
@@ -14,21 +20,20 @@ function setup() {
     canvas = createCanvas(windowWidth, windowHeight);
     canvas.position(0, 0);
 
-    frameRate(1);
+    frameRate(10);
 }
 
-function activationFunction(value) {
-    return value;
-    return (value >= 0 ? 1 : 0);
+function activationFunction(value) {    
+    return (hillslide) ? (value >= 0 ? 1 : 0) : value;
 }
 
 class Perceptron {
     constructor(size) {
         this.size = size + 1;
-        this.w = [];
-        for (let i = 0; i < this.size; i++) {
-            this.w[i] = (Math.random() * 2) - 1;
-        }
+        this.w = [1.0, -0.4, -0.1];
+        //for (let i = 0; i < this.size; i++) {
+        //    this.w[i] = (Math.random() * 2) - 1;
+        //}
     }
     feed(data) {
         data[this.size - 1] = 1;
@@ -41,13 +46,17 @@ class Perceptron {
     train(learningData) {
         let errorSum = [];
 
-        for (let n = 0; n < learningData.length; n++) {
-            let data = learningData[n];
 
-            let tdata = [1];
-            for (let i = 1; i < data.length; i++) {
-                tdata[i] = data[i - 1];
+        let index = Math.floor(Math.random() * learningData.length);
+
+        //for (let n = 0; n < learningData.length; n++) {
+            let data = learningData[index];
+
+            let tdata = [];
+            for (let i = 0; i < data.length - 1; i++) {
+                tdata[i] = data[i];
             }
+            tdata[this.size - 1] = 1;
             let target = data[data.length - 1];
 
             let out = 0;
@@ -65,7 +74,8 @@ class Perceptron {
                     errorSum[i] += -tdata[i];
                 }
             }
-        }
+        //}
+
 
         for (let i = 0; i < this.size && i < errorSum.length; i++) {
             this.w[i] += errorSum[i] * learningRate;
@@ -94,8 +104,8 @@ function draw() {
 
     const cut = 80;
     const increment = totalRange / cut;
-    const boxW = bw / cut;
-    const boxH = bh / cut;
+    const boxW = bw / cut + 1;
+    const boxH = bh / cut + 1;
     for (let x = 0; x <= totalRange; x += increment) {
         for (let y = 0; y <= totalRange; y += increment) {
             let dx = ((x / totalRange)) * bw;
@@ -105,10 +115,14 @@ function draw() {
             let ay = y + minRange;
             let value = activationFunction(perc.feed([ax, ay]));
 
+
             if (value > 0) {
-                fill(0, 150, 255, 255 * value);
+                fill(0, 150 * value, 255 * value);
             } else {
-                fill(255, 150, 0, 255 * -value);
+                if (hillslide) {
+                    value = -1;
+                }
+                fill(255 * -value, 150 * -value, 0);
             }
 
             rect(bx + dx, by + dy, boxW, boxH);
