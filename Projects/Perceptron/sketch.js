@@ -20,7 +20,7 @@ function setup() {
     canvas = createCanvas(windowWidth, windowHeight);
     canvas.position(0, 0);
 
-    frameRate(20);
+    frameRate(3);
 }
 
 function activationFunction(value) {    
