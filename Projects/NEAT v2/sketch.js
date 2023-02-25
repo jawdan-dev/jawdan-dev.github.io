@@ -1,3 +1,7 @@
+let testInput = [1, -1];
+
+
+
 var neat;
 var canvas;
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
@@ -8,12 +12,24 @@ function setup() {
 
     neat = new NEAT({
         inputNodeCount: 2,
-        outputNodeCount: 1,
+        outputNodeCount: 3,
         populationSize: 10,
     });
 
     console.log(neat);
 
+
+    let p = neat.population[0];
+
+    p.addConnection(0, 17);
+    p.addConnection(17, 18);
+    p.addConnection(18, 3);
+    //p.addConnection(18, 19);
+    //p.addConnection(19, 17);
+
+    p.connections[0].enabled = false;
+
+    console.log(p.getOutput(testInput));
 
     frameRate(30);
 }
@@ -21,9 +37,7 @@ function setup() {
 
 let iterations = 0;
 function draw() {
-    background(50);
+    background(12);
 
-    let s = Math.min(windowWidth, windowHeight);
-
-    neat.population[0].draw(50, 50, s - 100, s - 100, iterations++);
+    neat.population[0].draw(0, 0, windowWidth, windowHeight, iterations++, testInput);
 }
