@@ -1,6 +1,6 @@
 const hillslide = true;
 
-const learningRate = hillslide ? 0.2 : 0.04;
+const learningRate = hillslide ? 0.2 : 0.1;
 const class1 = 1;
 const class2 = hillslide ? 0 : -1;
 
@@ -29,11 +29,14 @@ function activationFunction(value) {
 var perc = new Perceptron(2);
 
 function draw() {
-    const border = 50;
-    let bx = border;
-    let bw = windowWidth - (border * 2);
-    let by = border;
-    let bh = windowHeight - (border * 2);
+    const border = 10;
+
+    const sf = Math.min(windowWidth, windowHeight);
+
+    let bx = border + (windowWidth - sf) / 2;
+    let bw = sf - (border * 2);
+    let by = border + (windowHeight - sf) / 2;
+    let bh = sf - (border * 2);
 
     const minRange = 0;
     const maxRange = 1;
@@ -45,7 +48,7 @@ function draw() {
     rect(bx, by, bw, bh);
     noStroke();
 
-    const cut = 80;
+    const cut = 160;
     const increment = totalRange / cut;
     const boxW = bw / cut + 1;
     const boxH = bh / cut + 1;
@@ -68,7 +71,9 @@ function draw() {
                 fill(255 * -value, 150 * -value, 0);
             }
 
-            rect(bx + dx, by + dy, boxW, boxH);
+            let bwo = Math.min(boxW + bx + dx, bx + bw) - (bx + dx);
+            let bho = Math.min(boxH + by + dy, by + bh) - (by + dy);
+            rect(bx + dx, by + dy, bwo, bho);
         }
     }
 
