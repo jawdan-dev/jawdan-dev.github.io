@@ -1,7 +1,8 @@
 
+const mapRange = (x, xmin, xmax, newmin, newmax) => { return (((x - xmin) / (xmax - xmin)) * (newmax - newmin)) + newmin; }
 const getChance = chance => { return random() < chance; }
 const getRandomInt = max => { return Math.floor(random() * max); }
-const getWeight = () => { return (random() * 2) - 1; }
+const getWeight = () => { return mapRange(random(), 0, 1, -1, 1); }
 
 class NEAT {
     constructor(config) {
@@ -118,14 +119,14 @@ NEAT.Genome = class {
     activationFunction(x) {
         //return Math.max(0.2 * x, x);
         //return 1 / (1 + Math.pow(Math.E, -x));
-        return Math.tanh(x);
+        return 2 * Math.tanh(x / 2);
         return x;
     }
 
     activationFunctionDerivitive(x) {
         //return (x >= 0) ? 1 : 0.2;
-        //return x * (1 - x);
-        return 1 / (Math.pow(Math.cosh(x), 2));
+        //return Math.pow(Math.E, -x) / Math.pow(1 + Math.pow(Math.E, -x), 2);
+        return 2 / (Math.pow(Math.cosh(x / 2), 2));
         return 1; // ?
     }
 
@@ -239,7 +240,7 @@ NEAT.Genome = class {
         let bw3 = 0;
         let bw4 = 0;
 
-        const learningRate = 0.4 / Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.1 / Math.min(inputs.length, targetOutputs.length);
 
         let diserr = []
 
@@ -316,16 +317,18 @@ NEAT.Genome = class {
             return num += 20;
         }
 
-        text(w32, 20, getDown());
-        text(w03, 20, getDown());
-        text(w13, 20, getDown());
-        getDown()
-        text(w42, 20, getDown());
-        text(w04, 20, getDown());
-        text(w14, 20, getDown());
+        textAlign(CENTER);
+        text(w32, 100, getDown());
+        text(w03, 100, getDown());
+        text(w13, 100, getDown());
+        text(w42, 100, getDown());
+        text(w04, 100, getDown());
+        text(w14, 100, getDown());
 
 
         getDown()
+
+        text("Error Delta:", 100, getDown());
         for (let i = 0; i < diserr.length; i++) {
             if (this.lastDis != undefined) {
                 let change = Math.abs(this.lastDis[i]) - Math.abs(diserr[i]);
@@ -337,54 +340,17 @@ NEAT.Genome = class {
                     fill(255, 255 - color, 255 - color);
                 }
 
-                text(diserr[i], 20, getDown());
+                text(diserr[i], 100, getDown());
 
             } else {
-                text(diserr[i], 20, getDown());
+                text(diserr[i], 100, getDown());
             }
         }
         this.lastDis = diserr;
-        if (nextStep) {
-        }
         fill(255);
+        textAlign(LEFT);
 
 
-        //getDown()
-        //text(bw1, 20, getDown());
-        //text(bw2, 20, getDown());
-        //text(bw3, 20, getDown());
-        //getDown()
-        //text(z0, 20, getDown());
-        //text(z1, 20, getDown());
-        //text(z2, 20, getDown());
-        //getDown()
-        //text(wbb0, 20, getDown());
-        //text(wb11, 20, getDown());
-        //text(wb12, 20, getDown());
-        //getDown()
-        //text(wbb1, 20, getDown());
-        //text(wb21, 20, getDown());
-        //text(wb22, 20, getDown());
-        //getDown()
-        //text(wbb2, 20, getDown());
-        //text(wb31, 20, getDown());
-        //text(wb32, 20, getDown());
-
-        this.connections[5].change = -learningRate * w32;
-        this.connections[3].change = -learningRate * w03;
-        this.connections[4].change = -learningRate * w13;
-        this.connections[8].change = -learningRate * w42;
-        this.connections[6].change = -learningRate * w04;
-        this.connections[7].change = -learningRate * w14;
-        this.connections[0].change = -learningRate * bw2;
-        this.connections[9].change = -learningRate * bw3;
-        this.connections[10].change = -learningRate * bw4;
-
-
-        if (nextStep == undefined || nextStep == false) {
-            //return;
-        }
-        nextStep = false;
         this.connections[5].weight -= learningRate * w32;
         this.connections[3].weight -= learningRate * w03;
         this.connections[4].weight -= learningRate * w13;
@@ -398,7 +364,7 @@ NEAT.Genome = class {
 
     getOutput(input) {
         let nodes = this.getCalculatedNodes(input);
-        console.log(nodes);
+        //console.log(nodes);
 
         if (nodes) {
             let output = [];
@@ -406,7 +372,6 @@ NEAT.Genome = class {
                 let n = nodes[this.neatInstance.inputNodeCount + i];
                 output[i] = n.calculated ? n.value : 0;
             }
-
             return output;
         }
         return undefined;
@@ -480,54 +445,53 @@ NEAT.Genome = class {
 
         let cx, cy, cm;
         //const iterations = 10;
-        if (this.maxMove > 0.0001) {
-            // seperation
-            for (let i = 0; i < this.drawVertices.length; i++) {
-                for (let j = 0; j < this.drawVertices.length; j++) {
-                    if (i != j) {
-                        cx = this.drawVertices[i].x - this.drawVertices[j].x;
-                        cy = this.drawVertices[i].y - this.drawVertices[j].y;
-                        cm = Math.sqrt((cx * cx) + (cy * cy));
-                        this.drawVertices[i].dx += (cx / cm) * fr(cm);
-                        this.drawVertices[i].dy += (cy / cm) * fr(cm);
-                    }
+        this.maxMove = Math.max(this.maxMove, 0.001);
+        // seperation
+        for (let i = 0; i < this.drawVertices.length; i++) {
+            for (let j = 0; j < this.drawVertices.length; j++) {
+                if (i != j) {
+                    cx = this.drawVertices[i].x - this.drawVertices[j].x;
+                    cy = this.drawVertices[i].y - this.drawVertices[j].y;
+                    cm = Math.sqrt((cx * cx) + (cy * cy));
+                    this.drawVertices[i].dx += (cx / cm) * fr(cm);
+                    this.drawVertices[i].dy += (cy / cm) * fr(cm);
                 }
             }
-
-            // attraction
-            for (let i = 0; i < this.drawEdges.length; i++) {
-                let e = this.drawEdges[i];
-                cx = this.drawVertices[e.to].x - this.drawVertices[e.from].x;
-                cy = this.drawVertices[e.to].y - this.drawVertices[e.from].y;
-                cm = Math.sqrt((cx * cx) + (cy * cy));
-
-                let weight = 1 + ((1 + Math.abs(this.connections[e.n].weight)) * 0.6);
-                let weightClamped = Math.min(Math.max(weight, 0.5, 2));
-
-                let facm = fa(cm);
-                this.drawVertices[e.to].dx -= (cx / cm) * facm * weightClamped;
-                this.drawVertices[e.to].dy -= (cy / cm) * facm * weightClamped;
-                this.drawVertices[e.from].dx += (cx / cm) * facm * weightClamped;
-                this.drawVertices[e.from].dy += (cy / cm) * facm * weightClamped;
-            }
-
-            // actual movement
-            for (let i = 0; i < this.drawVertices.length; i++) {
-                let dm = Math.sqrt((this.drawVertices[i].dx * this.drawVertices[i].dx) + (this.drawVertices[i].dy * this.drawVertices[i].dy));
-                let ax = (this.drawVertices[i].dx / dm) * Math.min(dm, this.maxMove);
-                let ay = (this.drawVertices[i].dy / dm) * Math.min(dm, this.maxMove);
-
-                //let tm = Math.sqrt((ax * ax) + (ay * ay));
-                //totalMove += tm;
-
-                this.drawVertices[i].x = this.drawVertices[i].x + ax;
-                this.drawVertices[i].y = this.drawVertices[i].y + ay;
-                this.drawVertices[i].dx = 0;
-                this.drawVertices[i].dy = 0;
-            }
-
-            this.maxMove *= 0.85;
         }
+
+        // attraction
+        for (let i = 0; i < this.drawEdges.length; i++) {
+            let e = this.drawEdges[i];
+            cx = this.drawVertices[e.to].x - this.drawVertices[e.from].x;
+            cy = this.drawVertices[e.to].y - this.drawVertices[e.from].y;
+            cm = Math.sqrt((cx * cx) + (cy * cy));
+
+            let weight = 1 + Math.abs(this.connections[e.n].weight * 0.8);
+            let weightClamped = Math.min(Math.max(weight, 0.5, 2));
+
+            let facm = fa(cm);
+            this.drawVertices[e.to].dx -= (cx / cm) * facm * weightClamped;
+            this.drawVertices[e.to].dy -= (cy / cm) * facm * weightClamped;
+            this.drawVertices[e.from].dx += (cx / cm) * facm * weightClamped;
+            this.drawVertices[e.from].dy += (cy / cm) * facm * weightClamped;
+        }
+
+        // actual movement
+        for (let i = 0; i < this.drawVertices.length; i++) {
+            let dm = Math.sqrt((this.drawVertices[i].dx * this.drawVertices[i].dx) + (this.drawVertices[i].dy * this.drawVertices[i].dy));
+            let ax = (this.drawVertices[i].dx / dm) * Math.min(dm, this.maxMove);
+            let ay = (this.drawVertices[i].dy / dm) * Math.min(dm, this.maxMove);
+
+            //let tm = Math.sqrt((ax * ax) + (ay * ay));
+            //totalMove += tm;
+
+            this.drawVertices[i].x = this.drawVertices[i].x + ax;
+            this.drawVertices[i].y = this.drawVertices[i].y + ay;
+            this.drawVertices[i].dx = 0;
+            this.drawVertices[i].dy = 0;
+        }
+
+        this.maxMove *= 0.85;
         //console.log(n);
 
         let minVx, maxVx, minVy, maxVy;
@@ -560,7 +524,7 @@ NEAT.Genome = class {
 
         const minColor = 20;
         const lowColor = 20;
-        const colorFactor = 255;
+        const colorFactor = 150;
         const arrowScale = 0.16;
 
         const getMagnitude = n => {
@@ -623,8 +587,8 @@ NEAT.Genome = class {
 
                 noStroke();
                 fill(255);
-                text(e.n, mx + 40, my - 20)
-                text(Math.round(this.connections[e.n].weight * 1000) / 1000, mx + 40, my)
+                //text(e.n, mx + 40, my - 20)
+                //text(Math.round(this.connections[e.n].weight * 1000) / 1000, mx + 40, my)
                 //text(this.connections[e.n].change, mx + 40, my + 20)
             }
         }
@@ -667,9 +631,9 @@ NEAT.Genome = class {
             stroke(12);
             circle(cx, cy, drawData ? nodeSize * 0.5 : nodeSize);
 
-            noStroke();
-            fill(0);
-            text(v.n - 1, cx, cy);
+            //noStroke();
+            //fill(0);
+            //text(v.n - 1, cx, cy);
         }
 
 
