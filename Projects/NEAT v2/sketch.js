@@ -87,7 +87,7 @@ function draw() {
     let hh = windowHeight / 2;
 
     //neat.population[0].draw(0, 0, windowWidth, windowHeight, iterations++, trainingData[0][0]);
-    neat.population[0].draw(left, 0, hw, hh, iterations++, trainingData[0][0]);
+    let move = neat.population[0].draw(left, 0, hw, hh, iterations++, trainingData[0][0]);
     neat.population[0].draw(left + hw, 0, hw, hh, iterations++, trainingData[1][0]);
     neat.population[0].draw(left, hh, hw, hh, iterations++, trainingData[2][0]);
     neat.population[0].draw(left + hw, hh, hw, hh, iterations++, trainingData[3][0]);
@@ -139,7 +139,7 @@ function draw() {
     drawTrainingData(0, 600, left, 250);
     textAlign(LEFT);
 
-    if (err != undefined && err < 0.0005) {
+    if (err != undefined && err < 0.00005 && move <= 0.004) {
         setup();
         iterations = 0;
     }

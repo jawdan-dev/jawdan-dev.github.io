@@ -456,6 +456,7 @@ NEAT.Genome = class {
 
         let cx, cy, cm;
         //const iterations = 10;
+        let totalMove = 0;
         this.maxMove = Math.max(this.maxMove, 0.0005);
         // seperation
         for (let i = 0; i < this.drawVertices.length; i++) {
@@ -493,8 +494,8 @@ NEAT.Genome = class {
             let ax = (this.drawVertices[i].dx / dm) * Math.min(dm, this.maxMove);
             let ay = (this.drawVertices[i].dy / dm) * Math.min(dm, this.maxMove);
 
-            //let tm = Math.sqrt((ax * ax) + (ay * ay));
-            //totalMove += tm;
+            let tm = Math.sqrt((ax * ax) + (ay * ay));
+            totalMove += tm;
 
             this.drawVertices[i].x = this.drawVertices[i].x + ax;
             this.drawVertices[i].y = this.drawVertices[i].y + ay;
@@ -648,7 +649,7 @@ NEAT.Genome = class {
         }
 
 
-        return this.maxMove < 0.0005;
+        return totalMove;
     }
 }
 
