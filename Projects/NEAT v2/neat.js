@@ -118,12 +118,14 @@ NEAT.Genome = class {
     activationFunction(x) {
         //return Math.max(0.2 * x, x);
         //return 1 / (1 + Math.pow(Math.E, -x));
+        return Math.tanh(x);
         return x;
     }
 
     activationFunctionDerivitive(x) {
         //return (x >= 0) ? 1 : 0.2;
         //return x * (1 - x);
+        return 1 / (Math.pow(Math.cosh(x), 2));
         return 1; // ?
     }
 
@@ -237,7 +239,7 @@ NEAT.Genome = class {
         let bw3 = 0;
         let bw4 = 0;
 
-        const learningRate = 0.01 / Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.4 / Math.min(inputs.length, targetOutputs.length);
 
         let diserr = []
 
@@ -254,11 +256,14 @@ NEAT.Genome = class {
             let nodes = this.getCalculatedNodes(input);
 
             let no = (this.neatInstance.biasNode ? 1 : 0);
-            let outputIndex = this.neatInstance.inputNodeCount + no;
 
-            let n = nodes[outputIndex];
+            const n0 = nodes[0 + no].value;
+            const n1 = nodes[1 + no].value;
+            const n2 = nodes[2 + no].value;
+            const n3 = nodes[3 + no].value;
+            const n4 = nodes[4 + no].value;
 
-            let error = (n.calculated ? n.value : 0) - targetOutput[0];
+            let error = n2 - targetOutput[0];
 
             diserr[diserr.length] = error;
 
@@ -277,11 +282,6 @@ NEAT.Genome = class {
             let wb04 = this.connections[6].weight;
             let wb14 = this.connections[7].weight;
 
-            const n0 = nodes[0 + no].value;
-            const n1 = nodes[1 + no].value;
-            const n2 = nodes[2 + no].value;
-            const n3 = nodes[3 + no].value;
-            const n4 = nodes[4 + no].value;
 
             const z2 = (wb32 * n3) + (wb42 * n4) + wbb2;
             const z3 = (wb03 * n0) + (wb13 * n1) + wbb3;
@@ -293,15 +293,15 @@ NEAT.Genome = class {
             const l3 = df(z3) * wb32 * l2;
             const l4 = df(z4) * wb42 * l2;
 
-            bw2 += l2;
+            bw2 += 1 * l2;
             w32 += n3 * l2;
             w42 += n4 * l2;
 
-            bw3 += l3;
+            bw3 += 1 * l3;
             w03 += n0 * l3;
             w13 += n1 * l3;
 
-            bw4 += l4;
+            bw4 += 1 * l4;
             w04 += n0 * l4;
             w14 += n1 * l4;
         }
@@ -329,7 +329,7 @@ NEAT.Genome = class {
         for (let i = 0; i < diserr.length; i++) {
             if (this.lastDis != undefined) {
                 let change = Math.abs(this.lastDis[i]) - Math.abs(diserr[i]);
-                let color = Math.min(Math.max(Math.abs(change) * 255 * 1000, 0), 255);
+                let color = Math.min(Math.max(Math.abs(change) * 255 * 100 / learningRate, 0), 255);
 
                 if (change >= 0) {
                     fill(255 - color, 255, 255 - color);
@@ -344,6 +344,8 @@ NEAT.Genome = class {
             }
         }
         this.lastDis = diserr;
+        if (nextStep) {
+        }
         fill(255);
 
 
@@ -380,7 +382,7 @@ NEAT.Genome = class {
 
 
         if (nextStep == undefined || nextStep == false) {
-            return;
+            //return;
         }
         nextStep = false;
         this.connections[5].weight -= learningRate * w32;

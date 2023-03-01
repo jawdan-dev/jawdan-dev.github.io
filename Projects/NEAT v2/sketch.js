@@ -48,18 +48,6 @@ function setup() {
     p.connections[1].enabled = false;
     p.connections[2].enabled = false;
 
-    let cs = [
-        1.5, 0, 0,
-        1, 1, 1,
-        -1, -1, 1,
-        0.5, -1.5
-    ]
-
-    for (let i = 0; i < p.connections.length && i < cs.length; i++) {
-        p.connections[i].weight = cs[i];
-    }
-
-
     if (false) {
         p.addConnection(0, 17);
         p.addConnection(17, 18);
