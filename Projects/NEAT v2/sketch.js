@@ -1,11 +1,11 @@
 const tt = 1;
-const tf = -0;
+const tf = -1;
 
 const trainingData = [
     [[tt, tt], [tf]],
+    [[tf, tf], [tf]],
     [[tt, tf], [tt]],
     [[tf, tt], [tt]],
-    [[tf, tf], [tf]],
 ];
 
 var neat;
@@ -19,7 +19,6 @@ function setup() {
         canvas.position(0, 0);
         doCreateCanvas = false;
     }
-
 
     neat = new NEAT({
         inputNodeCount: 2,
@@ -101,7 +100,7 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    neat.population[0].train(inputs, outputs);
+    let err = neat.population[0].train(inputs, outputs);
 
 
     textAlign(CENTER);
@@ -139,6 +138,11 @@ function draw() {
 
     drawTrainingData(0, 600, left, 250);
     textAlign(LEFT);
+
+    if (err != undefined && err < 0.0005) {
+        setup();
+        iterations = 0;
+    }
 }
 
 function drawFunction(f, dx, dy, dw, dh) {

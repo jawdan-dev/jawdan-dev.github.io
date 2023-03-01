@@ -346,7 +346,6 @@ NEAT.Genome = class {
                 text(diserr[i], 100, getDown());
             }
         }
-        this.lastDis = diserr;
         fill(255);
         textAlign(LEFT);
 
@@ -360,6 +359,18 @@ NEAT.Genome = class {
         this.connections[0].weight -= learningRate * bw2;
         this.connections[9].weight -= learningRate * bw3;
         this.connections[10].weight -= learningRate * bw4;
+
+        let totalErr = 0;
+        if (this.lastDis) {
+            for (let i = 0; i < diserr.length; i++) {
+                totalErr += Math.abs(diserr[i] - this.lastDis[i]);
+            }
+        } else {
+            totalErr = undefined;
+        }
+        this.lastDis = diserr;
+
+        return totalErr / diserr.length;
     }
 
     getOutput(input) {
@@ -436,7 +447,7 @@ NEAT.Genome = class {
                 }
             }
 
-            this.maxMove = 0.1;
+            this.maxMove = 0.025;
         }
 
         let k = Math.sqrt(1 / this.drawVertices.length);
@@ -445,7 +456,7 @@ NEAT.Genome = class {
 
         let cx, cy, cm;
         //const iterations = 10;
-        this.maxMove = Math.max(this.maxMove, 0.001);
+        this.maxMove = Math.max(this.maxMove, 0.0005);
         // seperation
         for (let i = 0; i < this.drawVertices.length; i++) {
             for (let j = 0; j < this.drawVertices.length; j++) {
@@ -491,7 +502,7 @@ NEAT.Genome = class {
             this.drawVertices[i].dy = 0;
         }
 
-        this.maxMove *= 0.85;
+        this.maxMove *= 0.95;
         //console.log(n);
 
         let minVx, maxVx, minVy, maxVy;
