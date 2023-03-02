@@ -120,6 +120,7 @@ NEAT.Genome = class {
         //return Math.max(0.2 * x, x);
         //return 1 / (1 + Math.pow(Math.E, -x));
         return 2 * Math.tanh(x / 2);
+        //return Math.tanh(x);
         return x;
     }
 
@@ -127,6 +128,7 @@ NEAT.Genome = class {
         //return (x >= 0) ? 1 : 0.2;
         //return Math.pow(Math.E, -x) / Math.pow(1 + Math.pow(Math.E, -x), 2);
         return 2 / (Math.pow(Math.cosh(x / 2), 2));
+        //return 1 / (Math.pow(Math.cosh(x), 2));
         return 1; // ?
     }
 
@@ -209,7 +211,7 @@ NEAT.Genome = class {
                     if (!nodes[g.from].calculated) {
                         tempUnused[tempUnused.length] = unusedConnections[i];
                         nodes[g.to].failedReferences++;
-                    } else {
+                    } else if (!nodes[g.to].calculated) {
                         if (nodes[g.to].value == undefined) nodes[g.to].value = 0;
                         nodes[g.to].value += nodes[g.from].value * c.weight;
                     }
@@ -229,83 +231,118 @@ NEAT.Genome = class {
     }
 
     train(inputs, targetOutputs) {
+        const learningRate = 0.4 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
 
-        let w32 = 0;
-        let w03 = 0;
-        let w13 = 0;
-        let w42 = 0;
-        let w04 = 0;
-        let w14 = 0;
-        let bw2 = 0;
-        let bw3 = 0;
-        let bw4 = 0;
+        let weightChange = [];
+        for (let i = 0; i < this.connections.length; i++) {
+            weightChange[i] = 0;
+        }
 
-        const learningRate = 0.1 / Math.min(inputs.length, targetOutputs.length);
+        const targetInputCount = this.neatInstance.inputNodeCount - (this.neatInstance.biasNode ? 1 : 0);
+        const targetOutputCount = this.neatInstance.outputNodeCount;
+        const nodeInputMaxIndex = this.neatInstance.inputNodeCount;
+        const nodeOutputMaxIndex = nodeInputMaxIndex + this.neatInstance.outputNodeCount;
 
-        let diserr = []
+        const df = this.activationFunctionDerivitive;
+
+        const diserr = [];
 
         for (let i = 0; i < inputs.length && i < targetOutputs.length; i++) {
             const input = inputs[i];
             const targetOutput = targetOutputs[i];
-
-            if (input == undefined || input.length == undefined || input.length != this.neatInstance.inputNodeCount - (this.neatInstance.biasNode ? 1 : 0) ||
-                targetOutput == undefined || targetOutput.length == undefined || targetOutput.length != this.neatInstance.outputNodeCount) {
-                console.log("bad data, continued.");
+            // Training data verification
+            if (input == undefined || input.length == undefined || input.length != targetInputCount ||
+                targetOutput == undefined || targetOutput.length == undefined || targetOutput.length != targetOutputCount) {
+                console.log(`bad data at index ${i}, skipped.`);
                 continue;
             }
 
-            let nodes = this.getCalculatedNodes(input);
+            const valueNodes = this.getCalculatedNodes(input);
 
-            let no = (this.neatInstance.biasNode ? 1 : 0);
+            // Derived Errors.
+            const errors = [];
+            for (let i = nodeInputMaxIndex; i < nodeOutputMaxIndex; i++) {
+                errors[i - nodeInputMaxIndex] = valueNodes[i].calculated ? (valueNodes[i].value - targetOutput[i - nodeInputMaxIndex]) : 0;
+                diserr[diserr.length] = errors[i - nodeInputMaxIndex];
+            }
+            // Gradients (for feeding purposes).
+            const nodeZs = [];
+            for (let i = 0; i < this.neatInstance.nodeCount && i < valueNodes.length; i++) {
+                nodeZs[i] = 0;
+            }
+            for (let i = 0; i < this.connections.length; i++) {
+                let c = this.connections[i];
+                let g = this.neatInstance.globalConnections[c.index];
+                if (c.enabled && valueNodes[g.from].calculated) {
+                    nodeZs[g.to] += c.weight * valueNodes[g.from].value;
+                }
+            }
+            // Gradient nodes for backpropagation calculation
+            const gradientNodes = [];
+            for (let i = 0; i < this.neatInstance.nodeCount && i < valueNodes.length; i++) {
+                let calculated = i >= nodeInputMaxIndex && i < nodeOutputMaxIndex;
+                gradientNodes[i] = {
+                    calculated: calculated,
+                    value: calculated ? (df(nodeZs[i]) * errors[i - nodeInputMaxIndex]) : undefined,
+                    failedReferences: 0
+                }
+            }
 
-            const n0 = nodes[0 + no].value;
-            const n1 = nodes[1 + no].value;
-            const n2 = nodes[2 + no].value;
-            const n3 = nodes[3 + no].value;
-            const n4 = nodes[4 + no].value;
+            //////////////////....
 
-            let error = n2 - targetOutput[0];
+            let unusedConnections = [];
+            for (let i = 0; i < this.connections.length; i++) {
+                if (this.connections[i].enabled) {
+                    unusedConnections[unusedConnections.length] = i;
+                }
+            }
 
-            diserr[diserr.length] = error;
+            let lastLength = unusedConnections.length + 1;
+            while (unusedConnections.length > 0 && unusedConnections.length != lastLength) {
+                lastLength = unusedConnections.length;
 
-            let derivError = error;
+                for (let i = 0; i < gradientNodes.length; i++) {
+                    gradientNodes[i].failedReferences = 0;
+                }
 
+                let tempUnused = [];
+                for (let i = 0; i < unusedConnections.length; i++) {
+                    let c = this.connections[unusedConnections[i]];
+                    let g = this.neatInstance.globalConnections[c.index];
 
-            let wbb2 = this.connections[0].weight;
-            let wb32 = this.connections[5].weight;
-            let wb42 = this.connections[8].weight;
+                    if (c.enabled) {
+                        if (!gradientNodes[g.to].calculated) {
+                            tempUnused[tempUnused.length] = unusedConnections[i];
+                            gradientNodes[g.from].failedReferences++;
+                        } else if (!gradientNodes[g.from].calculated) {
+                            if (gradientNodes[g.from].value == undefined) gradientNodes[g.from].value = 0;
+                            gradientNodes[g.from].value += df(nodeZs[g.from]) * c.weight * gradientNodes[g.to].value;
+                        }
+                    }
+                }
 
-            let wbb3 = this.connections[9].weight;
-            let wb03 = this.connections[3].weight;
-            let wb13 = this.connections[4].weight;
+                for (let i = 0; i < valueNodes.length; i++) {
+                    if (gradientNodes[i].calculated == false && gradientNodes[i].value != undefined && gradientNodes[i].failedReferences <= 0) {
+                        gradientNodes[i].calculated = true;
+                    }
+                }
+                unusedConnections = tempUnused;
+            }
 
-            let wbb4 = this.connections[10].weight;
-            let wb04 = this.connections[6].weight;
-            let wb14 = this.connections[7].weight;
+            for (let i = 0; i < this.connections.length; i++) {
+                let c = this.connections[i];
+                let g = this.neatInstance.globalConnections[c.index];
 
-
-            const z2 = (wb32 * n3) + (wb42 * n4) + wbb2;
-            const z3 = (wb03 * n0) + (wb13 * n1) + wbb3;
-            const z4 = (wb04 * n0) + (wb14 * n1) + wbb4;
-
-            const df = this.activationFunctionDerivitive;
-
-            const l2 = df(z2) * derivError;
-            const l3 = df(z3) * wb32 * l2;
-            const l4 = df(z4) * wb42 * l2;
-
-            bw2 += 1 * l2;
-            w32 += n3 * l2;
-            w42 += n4 * l2;
-
-            bw3 += 1 * l3;
-            w03 += n0 * l3;
-            w13 += n1 * l3;
-
-            bw4 += 1 * l4;
-            w04 += n0 * l4;
-            w14 += n1 * l4;
+                if (c.enabled && gradientNodes[g.to].calculated) {
+                    weightChange[i] += gradientNodes[g.to].value * valueNodes[g.from].value;
+                }
+            }
         }
+        for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
+            this.connections[i].weight += -learningRate * weightChange[i];
+        }
+
+
 
         noStroke();
         fill(0);
@@ -318,17 +355,8 @@ NEAT.Genome = class {
         }
 
         textAlign(CENTER);
-        text(w32, 100, getDown());
-        text(w03, 100, getDown());
-        text(w13, 100, getDown());
-        text(w42, 100, getDown());
-        text(w04, 100, getDown());
-        text(w14, 100, getDown());
 
-
-        getDown()
-
-        text("Error Delta:", 100, getDown());
+        text("Error:", 100, getDown());
         for (let i = 0; i < diserr.length; i++) {
             if (this.lastDis != undefined) {
                 let change = Math.abs(this.lastDis[i]) - Math.abs(diserr[i]);
@@ -349,24 +377,13 @@ NEAT.Genome = class {
         fill(255);
         textAlign(LEFT);
 
-
-        this.connections[5].weight -= learningRate * w32;
-        this.connections[3].weight -= learningRate * w03;
-        this.connections[4].weight -= learningRate * w13;
-        this.connections[8].weight -= learningRate * w42;
-        this.connections[6].weight -= learningRate * w04;
-        this.connections[7].weight -= learningRate * w14;
-        this.connections[0].weight -= learningRate * bw2;
-        this.connections[9].weight -= learningRate * bw3;
-        this.connections[10].weight -= learningRate * bw4;
+        for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
+            this.connections[i].weight += -learningRate * weightChange[i];
+        }
 
         let totalErr = 0;
-        if (this.lastDis) {
-            for (let i = 0; i < diserr.length; i++) {
-                totalErr += Math.abs(diserr[i] - this.lastDis[i]);
-            }
-        } else {
-            totalErr = undefined;
+        for (let i = 0; i < diserr.length; i++) {
+            totalErr += Math.abs(diserr[i]);
         }
         this.lastDis = diserr;
 
@@ -447,8 +464,10 @@ NEAT.Genome = class {
                 }
             }
 
-            this.maxMove = 0.025;
+            this.maxMove = 0.0125;
         }
+
+        let xFactor = w / h;
 
         let k = Math.sqrt(1 / this.drawVertices.length);
         const fa = s => { return (s * s) / k; }
@@ -462,7 +481,7 @@ NEAT.Genome = class {
         for (let i = 0; i < this.drawVertices.length; i++) {
             for (let j = 0; j < this.drawVertices.length; j++) {
                 if (i != j) {
-                    cx = this.drawVertices[i].x - this.drawVertices[j].x;
+                    cx = (this.drawVertices[i].x - this.drawVertices[j].x) * xFactor;
                     cy = this.drawVertices[i].y - this.drawVertices[j].y;
                     cm = Math.sqrt((cx * cx) + (cy * cy));
                     this.drawVertices[i].dx += (cx / cm) * fr(cm);
@@ -474,7 +493,7 @@ NEAT.Genome = class {
         // attraction
         for (let i = 0; i < this.drawEdges.length; i++) {
             let e = this.drawEdges[i];
-            cx = this.drawVertices[e.to].x - this.drawVertices[e.from].x;
+            cx = (this.drawVertices[e.to].x - this.drawVertices[e.from].x) * xFactor;
             cy = this.drawVertices[e.to].y - this.drawVertices[e.from].y;
             cm = Math.sqrt((cx * cx) + (cy * cy));
 

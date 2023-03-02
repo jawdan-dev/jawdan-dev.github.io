@@ -2,7 +2,7 @@ const tt = 1;
 const tf = -1;
 
 const trainingData = [
-    [[tt, tt], [tf]],
+    [[tt, tt], [tt]],
     [[tf, tf], [tf]],
     [[tt, tf], [tt]],
     [[tf, tt], [tt]],
@@ -33,19 +33,20 @@ function setup() {
 
     //p.addConnection(0, 4);
 
-    p.addConnection(1, 4);
-    p.addConnection(2, 4);
-    p.addConnection(4, 3);
+    for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
+        p.connections[i].enabled = false;
+    }
+    const extraNodeOffset = neat.inputNodeCount + neat.outputNodeCount;
+    for (let i = 0; i < 2; i++) {
+        let ni = extraNodeOffset + i;
+        for (let j = 0; j < neat.inputNodeCount; j++) {
+            p.addConnection(j, ni);
+        }
+        for (let j = 0; j < neat.outputNodeCount; j++) {
+            p.addConnection(ni, neat.inputNodeCount + j);
+        }
+    }
 
-    p.addConnection(1, 5);
-    p.addConnection(2, 5);
-    p.addConnection(5, 3);
-
-    p.addConnection(0, 4);
-    p.addConnection(0, 5);
-
-    p.connections[1].enabled = false;
-    p.connections[2].enabled = false;
 
     if (false) {
         p.addConnection(0, 17);
@@ -59,7 +60,7 @@ function setup() {
 
         p.connections[3].enabled = false;
     }
-    //console.log(p.getOutput(testInput));
+    console.log(p.getOutput(trainingData[0][0]));
     console.log(NEAT.distance(neat.population[0], neat.population[1]));
     console.log(NEAT.distance(neat.population[1], neat.population[2]));
 
@@ -102,7 +103,7 @@ function draw() {
 
     let err = neat.population[0].train(inputs, outputs);
 
-
+    let m = 3;
     textAlign(CENTER);
     if (true) {
         let gx = 0, gy = 300, gw = left, gh = left;
@@ -115,7 +116,6 @@ function draw() {
         fill(20);
         rect(gx, gy, gw, gh);
 
-        let m = 5;
         strokeWeight(1);
         stroke(255, 50);
         for (let i = 0; i <= m * 2; i++) {
@@ -126,9 +126,9 @@ function draw() {
         }
 
         stroke(255);
-        drawFunction(neat.population[0].activationFunction, gx, gy, gw, gh);
+        drawFunction(neat.population[0].activationFunction, gx, gy, gw, gh, m);
         stroke(255, 0, 0);
-        drawFunction(neat.population[0].activationFunctionDerivitive, gx, gy, gw, gh);
+        drawFunction(neat.population[0].activationFunctionDerivitive, gx, gy, gw, gh, m);
     }
 
 
@@ -145,8 +145,7 @@ function draw() {
     }
 }
 
-function drawFunction(f, dx, dy, dw, dh) {
-    let m = 5;
+function drawFunction(f, dx, dy, dw, dh, m) {
     let min = -m;
     let max = m;
 
@@ -161,7 +160,7 @@ function drawTrainingData(dx, dy, dw, dh) {
     let data = trainingData;
 
     let rows = data.length + 0.1;
-    let columns = data[0][0].length + data[0][1].length + 1;
+    let columns = data[0][0].length + data[0][1].length + neat.outputNodeCount;
 
 
     const minColor = 20;
