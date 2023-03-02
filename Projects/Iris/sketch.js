@@ -3,7 +3,7 @@ var nn = new NeuralNetwork(0.00025, [4, 10, 10, 10, 10, 3], "tanh");
 
 var table;
 function preload() {
-    table = loadTable('/iris.csv', 'csv', 'header');
+    table = loadTable('https://jawdan-dev.github.io/Projects/Iris/iris.csv', 'csv', 'header');
 }
 
 
