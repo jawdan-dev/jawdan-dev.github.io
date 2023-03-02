@@ -2,7 +2,7 @@ const tt = 1;
 const tf = -1;
 
 const trainingData = [
-    [[tt, tt], [tt]],
+    [[tt, tt], [tf]],
     [[tf, tf], [tf]],
     [[tt, tf], [tt]],
     [[tf, tt], [tt]],
@@ -46,7 +46,6 @@ function setup() {
             p.addConnection(ni, neat.inputNodeCount + j);
         }
     }
-
 
     if (false) {
         p.addConnection(0, 17);
