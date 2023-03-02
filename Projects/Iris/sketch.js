@@ -1,4 +1,4 @@
-var nn = new NeuralNetwork(0.00025, [4, 10, 10, 10, 10, 3], "tanh");
+var nn = new NeuralNetwork(0.00025, [4, 10, 10, 10, 10, 3], "relu");
 
 
 var table;
@@ -37,7 +37,7 @@ function setup() {
             } else {
                 let ind = outputClass[d[j]];
                 for (let k = 0; k < 3; k++) {
-                    output[k] = k == ind ? 1 : -1;
+                    output[k] = k == ind ? 1 : 0;
                 }
             }
         }
