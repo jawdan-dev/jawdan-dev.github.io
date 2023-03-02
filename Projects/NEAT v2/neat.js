@@ -231,7 +231,7 @@ NEAT.Genome = class {
     }
 
     train(inputs, targetOutputs) {
-        const learningRate = 0.4 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.2 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
 
         let weightChange = [];
         for (let i = 0; i < this.connections.length; i++) {
@@ -417,6 +417,10 @@ NEAT.Genome = class {
                 const c = this.connections[i];
                 const g = this.neatInstance.globalConnections[c.index];
 
+                if (this.neatInstance.biasNode && g.from == 0) {
+                    continue;
+                }
+
                 const nodes = [
                     g.from, g.to
                 ];
@@ -476,7 +480,7 @@ NEAT.Genome = class {
         let cx, cy, cm;
         //const iterations = 10;
         let totalMove = 0;
-        this.maxMove = Math.max(this.maxMove, 0.0005);
+        this.maxMove = Math.max(this.maxMove, 0.001);
         // seperation
         for (let i = 0; i < this.drawVertices.length; i++) {
             for (let j = 0; j < this.drawVertices.length; j++) {
@@ -513,7 +517,7 @@ NEAT.Genome = class {
             let ax = (this.drawVertices[i].dx / dm) * Math.min(dm, this.maxMove);
             let ay = (this.drawVertices[i].dy / dm) * Math.min(dm, this.maxMove);
 
-            let tm = Math.sqrt((ax * ax) + (ay * ay));
+            let tm = (ax * ax) + (ay * ay);
             totalMove += tm;
 
             this.drawVertices[i].x = this.drawVertices[i].x + ax;
@@ -668,7 +672,7 @@ NEAT.Genome = class {
         }
 
 
-        return totalMove;
+        return Math.round((totalMove / this.drawVertices.length) * 100000000);
     }
 }
 

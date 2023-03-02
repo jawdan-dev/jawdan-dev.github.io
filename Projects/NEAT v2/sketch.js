@@ -70,6 +70,11 @@ function setup() {
 
 var nextStep = false;
 
+
+let last = 0;
+let settled = 0;
+
+let framesGood = 0;
 let iterations = 0;
 function draw() {
     background(11); //12
@@ -138,8 +143,20 @@ function draw() {
     drawTrainingData(0, 600, left, 250);
     textAlign(LEFT);
 
-    if (err != undefined && err < 0.00005 && move <= 0.004) {
+    if (err != undefined && err < 0.0005) {
+        framesGood++;
+    } else {
+        framesGood = 0;
+    }
+    if (last != undefined && last == move) {
+        settled++;
+    } else {
+        settled = 0;
+        last = move;
+    }
+    if (framesGood > 60 && settled > 60) {
         setup();
+        framesGood = 0;
         iterations = 0;
     }
 }
