@@ -7,6 +7,14 @@ function preload() {
 }
 
 
+/*
+    Future work:
+        - normalize the input :)
+        - use a big ol nn per input feature, then feed it into a final network :) 4 -> 12 -> 3
+
+*/
+
+
 
 
 
