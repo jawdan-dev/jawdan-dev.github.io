@@ -4,6 +4,57 @@ const getChance = chance => { return random() < chance; }
 const getRandomInt = max => { return Math.floor(random() * max); }
 const getWeight = () => { return mapRange(random(), 0, 1, -1, 1); }
 
+const getColor = value => {
+    const minColor = 20;
+    const lowColor = 20;
+    const maxLowColor = 220;
+    const colorFactor = 150;
+
+    if (value == undefined) {
+        return {
+            color: colorFactor,
+            low: lowColor
+        };
+    }
+
+    const cutoff = 255 / colorFactor;
+    const rescale = ((maxLowColor - lowColor) / 255);
+
+    if (Math.abs(value) > cutoff) {
+        const v = (Math.abs(value) - cutoff) / (Math.abs(value) + (1 - cutoff));
+        return {
+            color: 255,
+            low: Math.min(Math.max((v * rescale * colorFactor) + lowColor, lowColor), maxLowColor)
+        }
+    }
+
+    return {
+        color: Math.min(Math.max(Math.abs(value) * colorFactor, minColor), 255),
+        low: lowColor
+    };
+}
+const setStrokeColor = value => {
+    const color = getColor(value);
+    if (value == undefined) {
+        stroke(color.low, color.color, color.low);
+    } else if (value >= 0) {
+        stroke(color.low, color.low, color.color);
+    } else {
+        stroke(color.color, color.low, color.low);
+    }
+}
+const setFillColor = value => {
+    const color = getColor(value);
+    if (value == undefined) {
+        fill(color.low, color.color, color.low);
+    } else if (value >= 0) {
+        fill(color.low, color.low, color.color);
+    } else {
+        fill(color.color, color.low, color.low);
+    }
+}
+
+
 class NEAT {
     constructor(config) {
         const checkInput = (value, fallback, type = undefined, checkFunc = undefined) => {
@@ -231,7 +282,7 @@ NEAT.Genome = class {
     }
 
     train(inputs, targetOutputs) {
-        const learningRate = 0.2 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.1 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
 
         let weightChange = [];
         for (let i = 0; i < this.connections.length; i++) {
@@ -407,8 +458,10 @@ NEAT.Genome = class {
 
     // graph force stuff
     /// https://cs.brown.edu/people/rtamassi/gdhandbook/chapters/force-directed.pdf
-    draw(x, y, w, h, iterations, input = undefined) {
+    draw(x, y, w, h, input = undefined) {
         // edges huh
+
+        const drawBias = true;
 
         if (!this.drawVertices || !this.drawEdges) {
             this.drawVertices = []
@@ -417,7 +470,7 @@ NEAT.Genome = class {
                 const c = this.connections[i];
                 const g = this.neatInstance.globalConnections[c.index];
 
-                if (this.neatInstance.biasNode && g.from == 0) {
+                if (this.neatInstance.biasNode && g.from == 0 && !drawBias) {
                     continue;
                 }
 
@@ -501,7 +554,7 @@ NEAT.Genome = class {
             cy = this.drawVertices[e.to].y - this.drawVertices[e.from].y;
             cm = Math.sqrt((cx * cx) + (cy * cy));
 
-            let weight = 1 + Math.abs(this.connections[e.n].weight * 0.8);
+            let weight = 0.6 + Math.abs(this.connections[e.n].weight * 0.8);
             let weightClamped = Math.min(Math.max(weight, 0.5, 2));
 
             let facm = fa(cm);
@@ -557,9 +610,6 @@ NEAT.Genome = class {
         const nodes = this.getCalculatedNodes(input);
         const drawData = nodes != undefined;
 
-        const minColor = 20;
-        const lowColor = 20;
-        const colorFactor = 150;
         const arrowScale = 0.16;
 
         const getMagnitude = n => {
@@ -580,18 +630,7 @@ NEAT.Genome = class {
             const u = this.drawVertices[e.to];
 
             if (drawData) {
-                if (nodes[v.n].calculated) {
-                    const value = this.connections[e.n].weight * nodes[v.n].value
-                    const color = Math.min(Math.max(Math.abs(value) * colorFactor, minColor), 255);
-                    const low = Math.max(((Math.abs(value) * colorFactor) - 255) + lowColor, lowColor);
-                    if (value >= 0) {
-                        stroke(low, low, color);
-                    } else {
-                        stroke(color, low, low);
-                    }
-                } else {
-                    stroke(lowColor, colorFactor, lowColor);
-                }
+                setStrokeColor(nodes[v.n].calculated ? this.connections[e.n].weight * nodes[v.n].value : undefined);
             } else {
                 stroke(255 * Math.min(e.w, 1));
             }
@@ -636,19 +675,7 @@ NEAT.Genome = class {
             const cy = ((v.y - minVy) * h * scale) + y;
 
             if (drawData) {
-                if (nodes[v.n].calculated) {
-                    const color = Math.min(Math.max(Math.abs(nodes[v.n].value * colorFactor), minColor), 255);
-                    const low = Math.max((Math.abs(nodes[v.n].value * colorFactor) - 255) + lowColor, lowColor);
-
-                    if (nodes[v.n].value >= 0) {
-                        fill(low, low, color);
-                    } else {
-                        fill(color, low, low);
-                    }
-                } else {
-                    fill(lowColor, colorFactor, lowColor);
-                }
-
+                setFillColor(nodes[v.n].calculated ? nodes[v.n].value : undefined);
                 noStroke();
                 circle(cx, cy, nodeSize);
             }

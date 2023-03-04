@@ -10,6 +10,8 @@ const trainingData = [
 
 var neat;
 
+var testval = 1;
+
 var doCreateCanvas = true;
 var canvas;
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
@@ -21,23 +23,20 @@ function setup() {
     }
 
     neat = new NEAT({
-        inputNodeCount: 2,
-        outputNodeCount: 1,
+        inputNodeCount: trainingData[0][0].length,
+        outputNodeCount: trainingData[0][1].length,
         populationSize: 10,
         biasNode: true,
     });
-
     console.log(neat);
 
+    /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
-
-    //p.addConnection(0, 4);
-
     for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
         p.connections[i].enabled = false;
     }
     const extraNodeOffset = neat.inputNodeCount + neat.outputNodeCount;
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < testval; i++) {
         let ni = extraNodeOffset + i;
         for (let j = 0; j < neat.inputNodeCount; j++) {
             p.addConnection(j, ni);
@@ -46,6 +45,7 @@ function setup() {
             p.addConnection(ni, neat.inputNodeCount + j);
         }
     }
+    testval++;
 
     if (false) {
         p.addConnection(0, 17);
@@ -91,11 +91,11 @@ function draw() {
     let hw = (windowWidth - left) / 2;
     let hh = windowHeight / 2;
 
-    //neat.population[0].draw(0, 0, windowWidth, windowHeight, iterations++, trainingData[0][0]);
-    let move = neat.population[0].draw(left, 0, hw, hh, iterations++, trainingData[0][0]);
-    neat.population[0].draw(left + hw, 0, hw, hh, iterations++, trainingData[1][0]);
-    neat.population[0].draw(left, hh, hw, hh, iterations++, trainingData[2][0]);
-    neat.population[0].draw(left + hw, hh, hw, hh, iterations++, trainingData[3][0]);
+    //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
+    let move = neat.population[0].draw(left, 0, hw, hh, trainingData[0][0]);
+    neat.population[0].draw(left + hw, 0, hw, hh, trainingData[1][0]);
+    neat.population[0].draw(left, hh, hw, hh, trainingData[2][0]);
+    neat.population[0].draw(left + hw, hh, hw, hh, trainingData[3][0]);
 
     let inputs = [];
     let outputs = [];
@@ -140,6 +140,11 @@ function draw() {
     fill(255);
     text("Training Table:", left / 2, 550);
 
+    for (let i = 0; i < neat.population[0].connections.length; i++) {
+        text(neat.population[0].connections[i].weight, left / 2, 900 + (i * 20));
+    }
+
+
     drawTrainingData(0, 600, left, 250);
     textAlign(LEFT);
 
@@ -177,12 +182,6 @@ function drawTrainingData(dx, dy, dw, dh) {
 
     let rows = data.length + 0.1;
     let columns = data[0][0].length + data[0][1].length + neat.outputNodeCount;
-
-
-    const minColor = 20;
-    const lowColor = 20;
-    const colorFactor = 150;
-
 
     textAlign(CENTER);
     textSize(18);
@@ -225,13 +224,7 @@ function drawTrainingData(dx, dy, dw, dh) {
             } else {
                 value = neat.population[0].getOutput(data[j][0])[i - ll];
             }
-            const color = Math.min(Math.max(Math.abs(value) * colorFactor, minColor), 255);
-            const low = Math.max(((Math.abs(value) * colorFactor) - 255) + lowColor, lowColor);
-            if (value >= 0) {
-                fill(low, low, color);
-            } else {
-                fill(color, low, low);
-            }
+            setFillColor(value);
             rect(dx + x, dy + y, dw / columns, dh / rows);
         }
     }
