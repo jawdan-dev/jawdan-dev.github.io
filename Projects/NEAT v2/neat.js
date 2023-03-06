@@ -194,14 +194,13 @@ NEAT.Genome = class {
     }
 
     addConnection(from, to) {
-        let connectionIndex = this.neatInstance.getConnection(from, to);
+        const connectionIndex = this.neatInstance.getConnection(from, to);
 
-        this.connections.forEach(c => {
-            if (c.index == connectionIndex) {
-                console.log(`Failed to add duplicate from ${from} to ${to} {thumbs up}`);
-                return;
-            }
-        });
+        const foundIndex = this.connections.findIndex(x => x.index == connectionIndex);
+        if (foundIndex != -1) {
+            this.connections[foundIndex].enabled = true;
+            return;
+        }
 
         this.connections[this.connections.length] = new NEAT.Genome.Gene(connectionIndex, getWeight());
         // i think this sort is needed (could be made faster with just inserting into the correct position :) )
@@ -209,8 +208,8 @@ NEAT.Genome = class {
             return a.index - b.index;
         })
 
-        if (this.drawEdges) delete this.drawEdges;
-        if (this.drawVertices) delete this.drawVertices;
+        //if (this.drawEdges) delete this.drawEdges;
+        //if (this.drawVertices) delete this.drawVertices;
     }
 
     getCalculatedNodes(input) {
@@ -281,8 +280,150 @@ NEAT.Genome = class {
         return nodes;
     }
 
+    getPotentialConnections(dx, dy, dw, dh) {
+        if (this.debug == undefined) {
+            this.debug = true;
+        }
+
+
+        let minVx, maxVx, minVy, maxVy;
+        for (let i = 0; i < this.drawVertices.length; i++) {
+            const x = this.drawVertices[i].x;
+            const y = this.drawVertices[i].y;
+            minVx = minVx != undefined ? Math.min(x, minVx) : x;
+            maxVx = maxVx != undefined ? Math.max(x, maxVx) : x;
+            minVy = minVy != undefined ? Math.min(y, minVy) : y;
+            maxVy = maxVy != undefined ? Math.max(y, maxVy) : y;
+        }
+        maxVx -= minVx;
+        maxVy -= minVy;
+
+        let scale = Math.max(maxVx, maxVy);
+
+        minVx -= (scale - maxVx) / 2
+        minVy -= (scale - maxVy) / 2
+
+        scale = 1 / scale;
+        const nodeSize = Math.sqrt((dw * dh) / this.drawVertices.length) * 0.15 * scale;
+        dx += nodeSize / 2
+        dy += nodeSize / 2
+        dw -= nodeSize
+        dh -= nodeSize
+
+        let vertices = [];
+        for (let i = 0; i < this.connections.length; i++) {
+            const c = this.connections[i];
+            const g = this.neatInstance.globalConnections[c.index];
+
+            if (!c.enabled) {
+                continue;
+            }
+
+            const vs = [g.from, g.to];
+            vs.forEach(v => {
+                if (vertices[v] == undefined) {
+                    vertices[v] = {
+                        fromConnections: [],
+                        toConnections: []
+                    }
+                }
+                if (g.from != v) {
+                    vertices[v].fromConnections[vertices[v].fromConnections.length] = i; // this is wild shit.
+                } else {
+                    vertices[v].toConnections[vertices[v].toConnections.length] = i;
+                }
+            });
+        }
+
+        const checkIfConnectionIsRecursive = c => {
+            const checkNodes = [c.to];
+
+            while (checkNodes.length > 0) {
+                const check = checkNodes.splice(0, 1)[0];
+
+                if (check == c.from) return true;
+                if (vertices[check] != undefined) {
+                    for (let i = 0; i < vertices[check].toConnections.length; i++) {
+                        const connection = this.connections[vertices[check].toConnections[i]];
+                        if (connection.enabled) {
+                            const toNodeIndex = this.neatInstance.globalConnections[connection.index].to;
+                            checkNodes[checkNodes.length] = toNodeIndex;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        let possibleConnections = [];
+        for (let i = 0; i < vertices.length; i++) {
+            if (vertices[i] == undefined) continue;
+            for (let j = Math.max(i + 1, this.neatInstance.inputNodeCount); j < vertices.length; j++) {
+                if (vertices[j] == undefined) continue;
+                const potentialConnections = [{
+                    from: j,
+                    to: i
+                }, {
+                    from: i,
+                    to: j
+                }];
+
+                potentialConnections.forEach(c => {
+                    const alreadyConnected = this.connections.findIndex(x => {
+                        return this.neatInstance.globalConnections[x.index].from == c.from && this.neatInstance.globalConnections[x.index].to == c.to && x.enabled;
+                    }) != -1;
+                    const recursive = checkIfConnectionIsRecursive(c);
+                    stroke(255);
+                    if (recursive) {
+                        stroke(0, 255, 0);
+                    }
+
+                    if (!alreadyConnected && !recursive) {
+                        possibleConnections[possibleConnections.length] = c;
+                    }
+
+                    if (!alreadyConnected && !recursive && this.drawVertices) {
+                        let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
+                        let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
+
+                        const fx = dx + ((from.x - minVx) * dw * scale);
+                        const fy = dy + ((from.y - minVy) * dh * scale);
+                        const tx = dx + ((to.x - minVx) * dw * scale);
+                        const ty = dy + ((to.y - minVy) * dh * scale);
+
+                        let cx = (tx - fx);
+                        let cy = (ty - fy);
+                        let mx = fx + cx / 2;
+                        let my = fy + cy / 2;
+                        const cm = Math.sqrt((cx * cx) + (cy * cy));
+                        cx *= 10 / cm;
+                        cy *= 10 / cm;
+                        mx += cy;
+                        my -= cx;
+
+                        const arrowSize = 1;
+
+                        noFill();
+                        strokeWeight(1);
+                        line(fx + cy, fy - cx, tx + cy, ty - cx);
+                        line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
+                        line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
+                    }
+                });
+            }
+        }
+
+        if (this.debug) {
+            console.log(vertices);
+        }
+
+
+
+        this.debug = false;
+    }
+
     train(inputs, targetOutputs) {
-        const learningRate = 0.1 / this.connections.length;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.1 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
         let weightChange = [];
         for (let i = 0; i < this.connections.length; i++) {
@@ -384,7 +525,7 @@ NEAT.Genome = class {
                 let c = this.connections[i];
                 let g = this.neatInstance.globalConnections[c.index];
 
-                if (c.enabled && gradientNodes[g.to].calculated) {
+                if (c.enabled && gradientNodes[g.to].calculated && valueNodes[g.from].calculated) {
                     weightChange[i] += gradientNodes[g.to].value * valueNodes[g.from].value;
                 }
             }
@@ -464,15 +605,13 @@ NEAT.Genome = class {
         const drawBias = true;
 
         if (!this.drawVertices || !this.drawEdges) {
+            console.log("making everything :)");
+
             this.drawVertices = []
             this.drawEdges = [];
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
                 const g = this.neatInstance.globalConnections[c.index];
-
-                if (this.neatInstance.biasNode && g.from == 0 && !drawBias) {
-                    continue;
-                }
 
                 const nodes = [
                     g.from, g.to
@@ -493,11 +632,13 @@ NEAT.Genome = class {
                     }
                 })
 
+                //if (this.neatInstance.biasNode && g.from == 0 && !drawBias) {
+                //    continue;
+                //}
+
                 if (this.connections[i].enabled) {
                     this.drawEdges[this.drawEdges.length] = {
                         n: i,
-                        //w: Math.abs(c.weight),
-                        //ws: Math.sign(c.weight),
                         from: g.from,
                         to: g.to
                     }
@@ -507,21 +648,60 @@ NEAT.Genome = class {
             for (let i = 0; i < this.drawVertices.length; i++) {
                 if (this.drawVertices[i] == undefined) {
                     this.drawVertices.splice(i, 1);
-
                     for (let j = 0; j < this.drawEdges.length; j++) {
-                        if (this.drawEdges[j].from >= i) {
-                            this.drawEdges[j].from--;
-                        }
-                        if (this.drawEdges[j].to >= i) {
-                            this.drawEdges[j].to--;
-                        }
+                        if (this.drawEdges[j].from >= i) this.drawEdges[j].from--;
+                        if (this.drawEdges[j].to >= i) this.drawEdges[j].to--;
                     }
-
                     i--;
                 }
             }
+        } else {
+            for (let i = 0; i < this.connections.length; i++) {
+                let c = this.connections[i];
+                let g = this.neatInstance.globalConnections[c.index];
+                const index = this.drawEdges.findIndex(x => {
+                    return x.n == i;
+                })
+                if (c.enabled && index == -1) {
+                    const newToAndFrom = [];
+                    [g.from, g.to].forEach(v => {
+                        const vIndex = this.drawVertices.findIndex(x => x.n == v);
+                        if (vIndex == -1) {
+                            let targetIndex = Math.min(v, this.drawVertices.length - 1);
+                            while (targetIndex >= 0 && this.drawVertices[targetIndex].n > v) targetIndex--;
+                            targetIndex++;
 
-            this.maxMove = 0.0125;
+                            console.log(`inserting vertice index at ${targetIndex} / ${this.drawVertices.length}`);
+
+                            for (let j = 0; j < this.drawEdges.length; j++) {
+                                if (this.drawEdges[j].from >= targetIndex) this.drawEdges[j].from++;
+                                if (this.drawEdges[j].to >= targetIndex) this.drawEdges[j].to++;
+                            }
+                            this.drawVertices.splice(targetIndex, 0, {
+                                n: v,
+                                x: random(0, 1),
+                                y: random(0, 1),
+                                dx: 0,
+                                dy: 0,
+                                // Draw stuff
+                                b: v == 0 && this.neatInstance.biasNode,
+                                i: (v < this.neatInstance.inputNodeCount),
+                                o: (v >= this.neatInstance.inputNodeCount && v < this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount),
+                            });
+                            newToAndFrom[newToAndFrom.length] = targetIndex;
+                        } else {
+                            newToAndFrom[newToAndFrom.length] = vIndex;
+                        }
+                    });
+                    this.drawEdges[this.drawEdges.length] = {
+                        n: i,
+                        from: newToAndFrom[0],
+                        to: newToAndFrom[1]
+                    }
+                } else if (!c.enabled && index != -1) {
+                    this.drawEdges.splice(index, 1);
+                }
+            }
         }
 
         let xFactor = w / h;
@@ -533,7 +713,9 @@ NEAT.Genome = class {
         let cx, cy, cm;
         //const iterations = 10;
         let totalMove = 0;
-        this.maxMove = Math.max(this.maxMove, 0.001);
+
+        const maxMove = 0.005;
+        const moveFactor = 0.05 / (this.drawVertices.length);
         // seperation
         for (let i = 0; i < this.drawVertices.length; i++) {
             for (let j = 0; j < this.drawVertices.length; j++) {
@@ -541,8 +723,8 @@ NEAT.Genome = class {
                     cx = (this.drawVertices[i].x - this.drawVertices[j].x) * xFactor;
                     cy = this.drawVertices[i].y - this.drawVertices[j].y;
                     cm = Math.sqrt((cx * cx) + (cy * cy));
-                    this.drawVertices[i].dx += (cx / cm) * fr(cm);
-                    this.drawVertices[i].dy += (cy / cm) * fr(cm);
+                    this.drawVertices[i].dx += (cx / cm) * fr(cm) * 2;
+                    this.drawVertices[i].dy += (cy / cm) * fr(cm) * 2;
                 }
             }
         }
@@ -567,8 +749,8 @@ NEAT.Genome = class {
         // actual movement
         for (let i = 0; i < this.drawVertices.length; i++) {
             let dm = Math.sqrt((this.drawVertices[i].dx * this.drawVertices[i].dx) + (this.drawVertices[i].dy * this.drawVertices[i].dy));
-            let ax = (this.drawVertices[i].dx / dm) * Math.min(dm, this.maxMove);
-            let ay = (this.drawVertices[i].dy / dm) * Math.min(dm, this.maxMove);
+            let ax = (this.drawVertices[i].dx / dm) * Math.min(dm * moveFactor, maxMove);
+            let ay = (this.drawVertices[i].dy / dm) * Math.min(dm * moveFactor, maxMove);
 
             let tm = (ax * ax) + (ay * ay);
             totalMove += tm;
@@ -579,7 +761,6 @@ NEAT.Genome = class {
             this.drawVertices[i].dy = 0;
         }
 
-        this.maxMove *= 0.95;
         //console.log(n);
 
         let minVx, maxVx, minVy, maxVy;

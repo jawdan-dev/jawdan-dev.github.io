@@ -10,7 +10,7 @@ const trainingData = [
 
 var neat;
 
-var testval = 1;
+var testval = 2;
 
 var doCreateCanvas = true;
 var canvas;
@@ -45,7 +45,7 @@ function setup() {
             p.addConnection(ni, neat.inputNodeCount + j);
         }
     }
-    testval++;
+    //testval++;
 
     if (false) {
         p.addConnection(0, 17);
@@ -91,11 +91,15 @@ function draw() {
     let hw = (windowWidth - left) / 2;
     let hh = windowHeight / 2;
 
+    const p = neat.population[0];
+
     //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
-    let move = neat.population[0].draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.population[0].draw(left + hw, 0, hw, hh, trainingData[1][0]);
-    neat.population[0].draw(left, hh, hw, hh, trainingData[2][0]);
-    neat.population[0].draw(left + hw, hh, hw, hh, trainingData[3][0]);
+    let move = p.draw(left, 0, hw * 2, hh * 2, trainingData[0][0]);
+    //p.draw(left + hw, 0, hw, hh, trainingData[1][0]);
+    //p.draw(left, hh, hw, hh, trainingData[2][0]);
+    //p.draw(left + hw, hh, hw, hh, trainingData[3][0]);
+
+    //p.getPotentialConnections(left, 0, hw * 2, hh * 2);
 
     let inputs = [];
     let outputs = [];
@@ -105,7 +109,7 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    let err = neat.population[0].train(inputs, outputs);
+    let err = p.train(inputs, outputs);
 
     let m = 3;
     textAlign(CENTER);
@@ -140,8 +144,16 @@ function draw() {
     fill(255);
     text("Training Table:", left / 2, 550);
 
-    for (let i = 0; i < neat.population[0].connections.length; i++) {
-        text(neat.population[0].connections[i].weight, left / 2, 900 + (i * 20));
+    let weights = [];
+    for (let i = 0; i < p.connections.length; i++) {
+        weights[i] = p.connections[i].weight;
+    }
+    weights.sort((a,b) => {
+        return Math.abs(b) - Math.abs(a);
+    })
+    for (let i = 0; i < weights.length && i < 20; i++) {
+        setFillColor(weights[i]);
+        text(weights[i], left / 2, 900 + (i * 20));
     }
 
 
@@ -160,9 +172,10 @@ function draw() {
         last = move;
     }
     if (framesGood > 60 && settled > 60) {
-        setup();
+        //setup();
         framesGood = 0;
-        iterations = 0;
+        settled = 0;
+        //iterations = 0;
     }
 }
 
