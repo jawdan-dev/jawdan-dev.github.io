@@ -45,6 +45,7 @@ function setup() {
             p.addConnection(ni, neat.inputNodeCount + j);
         }
     }
+    //p.connections[5].enabled = false;
     //testval++;
 
     if (false) {
@@ -99,7 +100,7 @@ function draw() {
     //p.draw(left, hh, hw, hh, trainingData[2][0]);
     //p.draw(left + hw, hh, hw, hh, trainingData[3][0]);
 
-    //p.getPotentialConnections(left, 0, hw * 2, hh * 2);
+    p.getPotentialConnections(left, 0, hw * 2, hh * 2);
 
     let inputs = [];
     let outputs = [];
@@ -146,9 +147,11 @@ function draw() {
 
     let weights = [];
     for (let i = 0; i < p.connections.length; i++) {
-        weights[i] = p.connections[i].weight;
+        if (p.connections[i].enabled) {
+            weights[weights.length] = p.connections[i].weight;
+        }
     }
-    weights.sort((a,b) => {
+    weights.sort((a, b) => {
         return Math.abs(b) - Math.abs(a);
     })
     for (let i = 0; i < weights.length && i < 20; i++) {

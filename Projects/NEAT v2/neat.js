@@ -193,23 +193,25 @@ NEAT.Genome = class {
         return clone;
     }
 
-    addConnection(from, to) {
+    addConnection(from, to, weight) {
         const connectionIndex = this.neatInstance.getConnection(from, to);
 
         const foundIndex = this.connections.findIndex(x => x.index == connectionIndex);
         if (foundIndex != -1) {
             this.connections[foundIndex].enabled = true;
+            if (weight != undefined) {
+                this.connections[foundIndex].weight = weight;
+            }
             return;
         }
 
-        this.connections[this.connections.length] = new NEAT.Genome.Gene(connectionIndex, getWeight());
+        const newIndex = this.connections.length;
+        this.connections[newIndex] = new NEAT.Genome.Gene(connectionIndex, weight != undefined ? weight : getWeight());
+
         // i think this sort is needed (could be made faster with just inserting into the correct position :) )
         this.connections.sort((a, b) => {
             return a.index - b.index;
         })
-
-        //if (this.drawEdges) delete this.drawEdges;
-        //if (this.drawVertices) delete this.drawVertices;
     }
 
     getCalculatedNodes(input) {
@@ -310,7 +312,14 @@ NEAT.Genome = class {
         dw -= nodeSize
         dh -= nodeSize
 
+        const totalNodesCount = this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount;
         let vertices = [];
+        for (let i = 0; i < totalNodesCount; i++) {
+            vertices[i] = {
+                fromConnections: [],
+                toConnections: []
+            }
+        }
         for (let i = 0; i < this.connections.length; i++) {
             const c = this.connections[i];
             const g = this.neatInstance.globalConnections[c.index];
@@ -336,18 +345,25 @@ NEAT.Genome = class {
         }
 
         const checkIfConnectionIsRecursive = c => {
+            const lookup = [];
             const checkNodes = [c.to];
+            lookup[c.from] = true;
 
             while (checkNodes.length > 0) {
                 const check = checkNodes.splice(0, 1)[0];
 
-                if (check == c.from) return true;
                 if (vertices[check] != undefined) {
                     for (let i = 0; i < vertices[check].toConnections.length; i++) {
                         const connection = this.connections[vertices[check].toConnections[i]];
                         if (connection.enabled) {
                             const toNodeIndex = this.neatInstance.globalConnections[connection.index].to;
-                            checkNodes[checkNodes.length] = toNodeIndex;
+
+                            if (lookup[toNodeIndex] == undefined) {
+                                lookup[toNodeIndex] = true;
+                                checkNodes[checkNodes.length] = toNodeIndex;
+                            } else {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -355,80 +371,84 @@ NEAT.Genome = class {
             return false;
         }
 
-        let possibleConnections = [];
+        let count = 0;
+        const possibleConnections = [];
         for (let i = 0; i < vertices.length; i++) {
             if (vertices[i] == undefined) continue;
-            for (let j = Math.max(i + 1, this.neatInstance.inputNodeCount); j < vertices.length; j++) {
+            for (let j = 0; j < vertices.length; j++) {
                 if (vertices[j] == undefined) continue;
                 const potentialConnections = [{
-                    from: j,
-                    to: i
-                }, {
                     from: i,
                     to: j
+                }, {
+                    from: j,
+                    to: i
                 }];
 
                 potentialConnections.forEach(c => {
-                    const alreadyConnected = this.connections.findIndex(x => {
-                        return this.neatInstance.globalConnections[x.index].from == c.from && this.neatInstance.globalConnections[x.index].to == c.to && x.enabled;
-                    }) != -1;
-                    const recursive = checkIfConnectionIsRecursive(c);
-                    stroke(255);
-                    if (recursive) {
-                        stroke(0, 255, 0);
-                    }
+                    if ((c.from < this.neatInstance.inputNodeCount || c.from >= totalNodesCount) && c.to >= this.neatInstance.inputNodeCount) {
+                        const alreadyConnected = this.connections.findIndex(x => {
+                            return this.neatInstance.globalConnections[x.index].from == c.from && this.neatInstance.globalConnections[x.index].to == c.to && x.enabled;
+                        }) != -1;
+                        const recursive = checkIfConnectionIsRecursive(c);
 
-                    if (!alreadyConnected && !recursive) {
-                        possibleConnections[possibleConnections.length] = c;
-                    }
+                        if (!alreadyConnected && !recursive) {
+                            possibleConnections[possibleConnections.length] = c;
+                        }
 
-                    if (!alreadyConnected && !recursive && this.drawVertices) {
-                        let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
-                        let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
+                        if (!alreadyConnected && !recursive && this.drawVertices) {
+                            let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
+                            let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
 
-                        const fx = dx + ((from.x - minVx) * dw * scale);
-                        const fy = dy + ((from.y - minVy) * dh * scale);
-                        const tx = dx + ((to.x - minVx) * dw * scale);
-                        const ty = dy + ((to.y - minVy) * dh * scale);
+                            const fx = dx + ((from.x - minVx) * dw * scale);
+                            const fy = dy + ((from.y - minVy) * dh * scale);
+                            const tx = dx + ((to.x - minVx) * dw * scale);
+                            const ty = dy + ((to.y - minVy) * dh * scale);
 
-                        let cx = (tx - fx);
-                        let cy = (ty - fy);
-                        let mx = fx + cx / 2;
-                        let my = fy + cy / 2;
-                        const cm = Math.sqrt((cx * cx) + (cy * cy));
-                        cx *= 10 / cm;
-                        cy *= 10 / cm;
-                        mx += cy;
-                        my -= cx;
+                            let cx = (tx - fx);
+                            let cy = (ty - fy);
+                            let mx = fx + cx / 2;
+                            let my = fy + cy / 2;
+                            const cm = Math.sqrt((cx * cx) + (cy * cy));
+                            cx *= 10 / cm;
+                            cy *= 10 / cm;
+                            mx += cy;
+                            my -= cx;
 
-                        const arrowSize = 1;
+                            fill(255);
+                            noStroke();
+                            text(count++, mx + cx * 4, my + cy * 4)
 
-                        noFill();
-                        strokeWeight(1);
-                        line(fx + cy, fy - cx, tx + cy, ty - cx);
-                        line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
-                        line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
+                            const arrowSize = 1;
+
+                            stroke(255);
+                            if (recursive) {
+                                stroke(0, 255, 0);
+                            }
+                            noFill();
+                            strokeWeight(1);
+                            line(fx + cy, fy - cx, tx + cy, ty - cx);
+                            line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
+                            line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
+                        }
                     }
                 });
             }
         }
 
-        if (this.debug) {
-            console.log(vertices);
-        }
-
-
-
-        this.debug = false;
+        return possibleConnections;
     }
 
     train(inputs, targetOutputs) {
         const learningRate = 0.1 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
-        let weightChange = [];
-        for (let i = 0; i < this.connections.length; i++) {
-            weightChange[i] = 0;
-        }
+        const weightChange = [];
+        for (let i = 0; i < this.connections.length; i++) weightChange[i] = 0;
+
+        const potentialConnections = this.getPotentialConnections();
+        const potentialWeight = [];
+        for (let i = 0; i < potentialConnections.length; i++) potentialWeight[i] = 0;
+
 
         const targetInputCount = this.neatInstance.inputNodeCount - (this.neatInstance.biasNode ? 1 : 0);
         const targetOutputCount = this.neatInstance.outputNodeCount;
@@ -438,7 +458,6 @@ NEAT.Genome = class {
         const df = this.activationFunctionDerivitive;
 
         const diserr = [];
-
         for (let i = 0; i < inputs.length && i < targetOutputs.length; i++) {
             const input = inputs[i];
             const targetOutput = targetOutputs[i];
@@ -529,12 +548,26 @@ NEAT.Genome = class {
                     weightChange[i] += gradientNodes[g.to].value * valueNodes[g.from].value;
                 }
             }
-        }
-        for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
-            this.connections[i].weight += -learningRate * weightChange[i];
+
+            for (let i = 0; i < this.connections.length; i++) {
+                let c = this.connections[i];
+                let g = this.neatInstance.globalConnections[c.index];
+
+                if (c.enabled && gradientNodes[g.to].calculated && valueNodes[g.from].calculated) {
+                    weightChange[i] += gradientNodes[g.to].value * valueNodes[g.from].value;
+                }
+            }
+            // Potential Bois
+            for (let i = 0; i < potentialConnections.length; i++) {
+                let c = potentialConnections[i];
+                potentialWeight[i] += gradientNodes[c.to].value * valueNodes[c.from].value;
+            }
         }
 
-
+        if (!this.debug2) {
+            console.log("Potential:: ", potentialWeight);
+            this.debug2 = true;
+        }
 
         noStroke();
         fill(0);
@@ -570,7 +603,28 @@ NEAT.Genome = class {
         textAlign(LEFT);
 
         for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
+            weightChange[i] /= trainingData.length;
+
             this.connections[i].weight += -learningRate * weightChange[i];
+            if (Math.abs(this.connections[i].weight) < 0.01) {
+                //this.connections[i].enabled = false;
+            }
+        }
+
+        for (let i = 0; i < potentialWeight.length; i++) {
+            potentialWeight[i] /= trainingData.length;
+
+            let add = false;
+            const c = potentialConnections[i];
+            if (potentialWeight[i] == NaN) {
+                if (c.to >= this.neatInstance.inputNodeCount && c.to < this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount) {
+                    add = true;
+                }
+            } else if (potentialWeight[i] > 0.8) {
+                add = true;
+            }
+
+            //if (add) this.addConnection(c.from, c.to, potentialWeight[i]);
         }
 
         let totalErr = 0;
