@@ -72,6 +72,7 @@ class NEAT {
 
         this.nodeCount = 0;
         this.globalConnections = [];
+        this.splitConnections = [];
 
         this.population = [];
         let populationSize = checkInput(config.populationSize, 200, 'number', Number.isInteger);
@@ -94,9 +95,25 @@ class NEAT {
             }
         }
         this.nodeCount = Math.max(this.nodeCount, Math.max(from, to) + 1);
-        let index = this.globalConnections.length;
+        const index = this.globalConnections.length;
         this.globalConnections[index] = new NEAT.Connection(from, to);
         return index;
+    }
+
+    getSplitConnectionNode(from, to) {
+        for (let i = 0; i < this.splitConnections.length; i++) {
+            if (this.splitConnections[i].from == from && this.splitConnections[i].to == to) {
+                return this.splitConnections[i].splitNode;
+            }
+        }
+        const splitNode = this.nodeCount;
+        this.nodeCount = Math.max(this.nodeCount, Math.max(from, to, splitNode) + 1);
+        this.splitConnections[this.splitConnections.length] = {
+            from: from,
+            to: to,
+            splitNode: splitNode
+        }
+        return splitNode;
     }
 
     static distance(g1, g2) {
@@ -194,6 +211,7 @@ NEAT.Genome = class {
     }
 
     addConnection(from, to, weight) {
+        if (from == to) return;
         const connectionIndex = this.neatInstance.getConnection(from, to);
 
         const foundIndex = this.connections.findIndex(x => x.index == connectionIndex);
@@ -287,31 +305,6 @@ NEAT.Genome = class {
             this.debug = true;
         }
 
-
-        let minVx, maxVx, minVy, maxVy;
-        for (let i = 0; i < this.drawVertices.length; i++) {
-            const x = this.drawVertices[i].x;
-            const y = this.drawVertices[i].y;
-            minVx = minVx != undefined ? Math.min(x, minVx) : x;
-            maxVx = maxVx != undefined ? Math.max(x, maxVx) : x;
-            minVy = minVy != undefined ? Math.min(y, minVy) : y;
-            maxVy = maxVy != undefined ? Math.max(y, maxVy) : y;
-        }
-        maxVx -= minVx;
-        maxVy -= minVy;
-
-        let scale = Math.max(maxVx, maxVy);
-
-        minVx -= (scale - maxVx) / 2
-        minVy -= (scale - maxVy) / 2
-
-        scale = 1 / scale;
-        const nodeSize = Math.sqrt((dw * dh) / this.drawVertices.length) * 0.15 * scale;
-        dx += nodeSize / 2
-        dy += nodeSize / 2
-        dw -= nodeSize
-        dh -= nodeSize
-
         const totalNodesCount = this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount;
         let vertices = [];
         for (let i = 0; i < totalNodesCount; i++) {
@@ -395,42 +388,6 @@ NEAT.Genome = class {
                         if (!alreadyConnected && !recursive) {
                             possibleConnections[possibleConnections.length] = c;
                         }
-
-                        if (!alreadyConnected && !recursive && this.drawVertices) {
-                            let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
-                            let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
-
-                            const fx = dx + ((from.x - minVx) * dw * scale);
-                            const fy = dy + ((from.y - minVy) * dh * scale);
-                            const tx = dx + ((to.x - minVx) * dw * scale);
-                            const ty = dy + ((to.y - minVy) * dh * scale);
-
-                            let cx = (tx - fx);
-                            let cy = (ty - fy);
-                            let mx = fx + cx / 2;
-                            let my = fy + cy / 2;
-                            const cm = Math.sqrt((cx * cx) + (cy * cy));
-                            cx *= 10 / cm;
-                            cy *= 10 / cm;
-                            mx += cy;
-                            my -= cx;
-
-                            fill(255);
-                            noStroke();
-                            text(count++, mx + cx * 4, my + cy * 4)
-
-                            const arrowSize = 1;
-
-                            stroke(255);
-                            if (recursive) {
-                                stroke(0, 255, 0);
-                            }
-                            noFill();
-                            strokeWeight(1);
-                            line(fx + cy, fy - cx, tx + cy, ty - cx);
-                            line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
-                            line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
-                        }
                     }
                 });
             }
@@ -439,7 +396,31 @@ NEAT.Genome = class {
         return possibleConnections;
     }
 
-    train(inputs, targetOutputs) {
+    train(inputs, targetOutputs, dx, dy, dw, dh) {
+        let minVx, maxVx, minVy, maxVy;
+        for (let i = 0; i < this.drawVertices.length; i++) {
+            const x = this.drawVertices[i].x;
+            const y = this.drawVertices[i].y;
+            minVx = minVx != undefined ? Math.min(x, minVx) : x;
+            maxVx = maxVx != undefined ? Math.max(x, maxVx) : x;
+            minVy = minVy != undefined ? Math.min(y, minVy) : y;
+            maxVy = maxVy != undefined ? Math.max(y, maxVy) : y;
+        }
+        maxVx -= minVx;
+        maxVy -= minVy;
+
+        let scale = Math.max(maxVx, maxVy);
+
+        minVx -= (scale - maxVx) / 2
+        minVy -= (scale - maxVy) / 2
+
+        scale = 1 / scale;
+        const nodeSize = Math.sqrt((dw * dh) / this.drawVertices.length) * 0.15 * scale;
+        dx += nodeSize / 2
+        dy += nodeSize / 2
+        dw -= nodeSize
+        dh -= nodeSize
+
         const learningRate = 0.1 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
         const weightChange = [];
@@ -611,6 +592,7 @@ NEAT.Genome = class {
             }
         }
 
+        let count = 0;
         for (let i = 0; i < potentialWeight.length; i++) {
             potentialWeight[i] /= trainingData.length;
 
@@ -625,6 +607,39 @@ NEAT.Genome = class {
             }
 
             //if (add) this.addConnection(c.from, c.to, potentialWeight[i]);
+
+            let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
+            let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
+
+            const fx = dx + ((from.x - minVx) * dw * scale);
+            const fy = dy + ((from.y - minVy) * dh * scale);
+            const tx = dx + ((to.x - minVx) * dw * scale);
+            const ty = dy + ((to.y - minVy) * dh * scale);
+
+            let cx = (tx - fx);
+            let cy = (ty - fy);
+            let mx = fx + cx / 2;
+            let my = fy + cy / 2;
+            const cm = Math.sqrt((cx * cx) + (cy * cy));
+            cx *= 10 / cm;
+            cy *= 10 / cm;
+            mx += cy;
+            my -= cx;
+
+            fill(255);
+            noStroke();
+            text(count++, mx + cx * 4, my + cy * 4)
+            text(potentialWeight[i], dx, dy + (24 * count));
+
+            const arrowSize = 1;
+
+            //stroke(255);
+            setStrokeColor(potentialWeight[i]);
+            noFill();
+            strokeWeight(1);
+            line(fx + cy, fy - cx, tx + cy, ty - cx);
+            line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
+            line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
         }
 
         let totalErr = 0;
@@ -649,6 +664,21 @@ NEAT.Genome = class {
             return output;
         }
         return undefined;
+    }
+
+    splitConnection(index) {
+        const from = this.neatInstance.globalConnections[this.connections[index].index].from;
+        const to = this.neatInstance.globalConnections[this.connections[index].index].to;
+        const splitNode = this.neatInstance.getSplitConnectionNode(from, to);
+
+        console.log(from, to, splitNode);
+
+        this.connections[index].enabled = false;
+        this.addConnection(from, splitNode, this.connections[index].weight);
+        this.addConnection(splitNode, to, 1);
+        if (this.neatInstance.biasNode) {
+            this.addConnection(0, splitNode);
+        }
     }
 
     // graph force stuff

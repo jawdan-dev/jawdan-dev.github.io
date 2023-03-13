@@ -32,19 +32,23 @@ function setup() {
 
     /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
-    for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
-        p.connections[i].enabled = false;
-    }
-    const extraNodeOffset = neat.inputNodeCount + neat.outputNodeCount;
-    for (let i = 0; i < testval; i++) {
-        let ni = extraNodeOffset + i;
-        for (let j = 0; j < neat.inputNodeCount; j++) {
-            p.addConnection(j, ni);
-        }
-        for (let j = 0; j < neat.outputNodeCount; j++) {
-            p.addConnection(ni, neat.inputNodeCount + j);
-        }
-    }
+    p.splitConnection(1);
+    p.splitConnection(2);
+    p.addConnection(1, 5);
+    p.addConnection(2, 3);
+    //for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
+    //    p.connections[i].enabled = false;
+    //}
+    //const extraNodeOffset = neat.inputNodeCount + neat.outputNodeCount;
+    //for (let i = 0; i < testval; i++) {
+    //    let ni = extraNodeOffset + i;
+    //    for (let j = 0; j < neat.inputNodeCount; j++) {
+    //        p.addConnection(j, ni);
+    //    }
+    //    for (let j = 0; j < neat.outputNodeCount; j++) {
+    //        p.addConnection(ni, neat.inputNodeCount + j);
+    //    }
+    //}
     //p.connections[5].enabled = false;
     //testval++;
 
@@ -110,7 +114,7 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    let err = p.train(inputs, outputs);
+    let err = p.train(inputs, outputs, left, 0, hw * 2, hh * 2);
 
     let m = 3;
     textAlign(CENTER);
