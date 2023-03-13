@@ -364,11 +364,10 @@ NEAT.Genome = class {
             return false;
         }
 
-        let count = 0;
         const possibleConnections = [];
         for (let i = 0; i < vertices.length; i++) {
             if (vertices[i] == undefined) continue;
-            for (let j = 0; j < vertices.length; j++) {
+            for (let j = i + 1; j < vertices.length; j++) {
                 if (vertices[j] == undefined) continue;
                 const potentialConnections = [{
                     from: i,
@@ -592,6 +591,8 @@ NEAT.Genome = class {
             }
         }
 
+        potentialWeight.sort((a, b) => Math.abs(b) - Math.abs(a));
+
         let count = 0;
         for (let i = 0; i < potentialWeight.length; i++) {
             potentialWeight[i] /= trainingData.length;
@@ -629,6 +630,7 @@ NEAT.Genome = class {
             fill(255);
             noStroke();
             text(count++, mx + cx * 4, my + cy * 4)
+            setFillColor(potentialWeight[i]);
             text(potentialWeight[i], dx, dy + (24 * count));
 
             const arrowSize = 1;

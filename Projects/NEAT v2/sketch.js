@@ -75,6 +75,10 @@ function setup() {
 
 var nextStep = false;
 
+var trainingDataIndex = 0;
+var trainingDataFloatTime = 2;
+var trainingDataFloat = trainingDataFloatTime;
+
 
 let last = 0;
 let settled = 0;
@@ -82,6 +86,12 @@ let settled = 0;
 let framesGood = 0;
 let iterations = 0;
 function draw() {
+    trainingDataFloat -= deltaTime * 0.001
+    if (trainingDataFloat <= 0) {
+        trainingDataFloat = trainingDataFloatTime;
+        trainingDataIndex = (trainingDataIndex + 1) % trainingData.length
+    }
+
     background(11); //12
 
     noStroke();
@@ -99,7 +109,7 @@ function draw() {
     const p = neat.population[0];
 
     //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
-    let move = p.draw(left, 0, hw * 2, hh * 2, trainingData[0][0]);
+    let move = p.draw(left, 0, hw * 2, hh * 2, trainingData[trainingDataIndex][0]);
     //p.draw(left + hw, 0, hw, hh, trainingData[1][0]);
     //p.draw(left, hh, hw, hh, trainingData[2][0]);
     //p.draw(left + hw, hh, hw, hh, trainingData[3][0]);
@@ -257,6 +267,6 @@ function keyPressed() {
         setup();
         iterations = 0;
     } else if (keyCode == 67) {
-        nextStep = true;
+        
     }
 }
