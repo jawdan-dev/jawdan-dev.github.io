@@ -32,9 +32,9 @@ function setup() {
 
     /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
-    p.splitConnection(1);
+    //p.splitConnection(1);
     p.splitConnection(2);
-    p.addConnection(1, 5);
+    p.addConnection(1, 4);
     p.addConnection(2, 3);
     //for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
     //    p.connections[i].enabled = false;
