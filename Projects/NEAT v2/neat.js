@@ -482,8 +482,8 @@ NEAT.Genome = class {
         for (let i = 0; i < this.connections.length; i++) weightChange[i] = 0;
 
         const potentialConnections = this.getPotentialConnections();
-        const potentialWeight = [];
-        for (let i = 0; i < potentialConnections.length; i++) potentialWeight[i] = 0;
+        const potentialWeights = [];
+        for (let i = 0; i < potentialConnections.length; i++) potentialWeights[i] = 0;
 
         const targetInputCount = this.neatInstance.inputNodeCount - (this.neatInstance.biasNode ? 1 : 0);
         const targetOutputCount = this.neatInstance.outputNodeCount;
@@ -521,13 +521,21 @@ NEAT.Genome = class {
             }
             for (let i = 0; i < potentialConnections.length; i++) {
                 let c = potentialConnections[i];
-                potentialWeight[i] += gradientNodes[c.to].value * calculatedNodes[c.from].value;
+                potentialWeights[i] += gradientNodes[c.to].value * calculatedNodes[c.from].value;
             }
+        }
+
+        const divider = Math.max(inputs.length, targetOutputs.length);
+        for (let i = 0; i < weightChange.length; i++) {
+            weightChange[i] /= divider;
+        }
+        for (let i = 0; i < potentialWeights.length; i++) {
+            potentialWeights[i] /= divider;
         }
 
         return {
             weightChange: weightChange,
-            potentialWeight: potentialWeight,
+            potentialWeights: potentialWeights,
             potentialConnections: potentialConnections,
             totalErrors: totalErrors,
         }
@@ -563,7 +571,7 @@ NEAT.Genome = class {
 
         const {
             weightChange,
-            potentialWeight,
+            potentialWeights,
             potentialConnections,
             totalErrors,
         } = this.getWeightChange(inputs, targetOutputs);
@@ -607,8 +615,6 @@ NEAT.Genome = class {
 
         if (train) {
             for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
-                weightChange[i] /= trainingData.length;
-
                 this.connections[i].weight += -learningRate * weightChange[i];
                 if (Math.abs(this.connections[i].weight) < 0.01) {
                     //this.connections[i].enabled = false;
@@ -616,19 +622,17 @@ NEAT.Genome = class {
             }
         }
 
-        potentialWeight.sort((a, b) => Math.abs(b) - Math.abs(a));
+        potentialWeights.sort((a, b) => Math.abs(b) - Math.abs(a));
 
         let count = 0;
-        for (let i = 0; i < potentialWeight.length; i++) {
-            potentialWeight[i] /= trainingData.length;
-
+        for (let i = 0; i < potentialWeights.length; i++) {
             let add = false;
             const c = potentialConnections[i];
-            if (potentialWeight[i] == NaN) {
+            if (potentialWeights[i] == NaN) {
                 if (c.to >= this.neatInstance.inputNodeCount && c.to < this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount) {
                     add = true;
                 }
-            } else if (potentialWeight[i] > 0.8) {
+            } else if (potentialWeights[i] > 0.8) {
                 add = true;
             }
 
@@ -655,13 +659,13 @@ NEAT.Genome = class {
             fill(255);
             noStroke();
             text(count++, mx + cx * 4, my + cy * 4)
-            setFillColor(potentialWeight[i]);
-            text(potentialWeight[i], dx, dy + (24 * count));
+            setFillColor(potentialWeights[i]);
+            text(potentialWeights[i], dx, dy + (24 * count));
 
             const arrowSize = 1;
 
             //stroke(255);
-            setStrokeColor(potentialWeight[i]);
+            setStrokeColor(potentialWeights[i]);
             noFill();
             strokeWeight(1);
             line(fx + cy, fy - cx, tx + cy, ty - cx);
@@ -671,13 +675,55 @@ NEAT.Genome = class {
 
         return {
             weightChange: weightChange,
-            potentialWeight: potentialWeight,
+            potentialWeights: potentialWeights,
             totalErrors: totalErrors,
         }
     }
 
-    mutate(potentialWeight) {
+    mutate(potentialWeights) {
+        const potentialMutations = [];
 
+        if (getChance(0.1)) {
+            const potentialConnections = this.getPotentialConnections();
+
+            for (let i = 0; i < potentialConnections.length && i < potentialWeights.length; i++) {
+                potentialMutations[potentialMutations.length] = {
+                    function: () => {
+                        const c = potentialConnections[i];
+                        this.addConnection(c.from, c.to, potentialWeights[i]);
+                    },
+                    weight: Math.max(0.1, Math.abs(potentialWeights[i]))
+                }
+            }
+        }
+        if (getChance(0.1)) {
+            // split? idk
+        }
+
+
+        if (potentialMutations.length <= 0) {
+            return;
+        }
+
+        let totalWeight = 0;
+        for (let i = 0; i < potentialMutations.length; i++) {
+            totalWeight += potentialMutations[i].weight;
+        }
+
+        const divisor = 1 / totalWeight;
+        for (let i = 0; i < potentialMutations.length; i++) {
+            potentialMutations[i].weigh *= divisor;
+        }
+
+        const chosen = random();
+        let offset = 0;
+        for (let i = 0; i < potentialMutations.length; i++) {
+            if (chosen > offset + potentialMutations[i].weight) {
+                potentialMutations[i].function();
+                break;
+            }
+            offset += potentialMutations[i].weight;
+        }
     }
 
     evolve(inputs, targetOutputs, maxIterations, stopError) {
@@ -690,7 +736,7 @@ NEAT.Genome = class {
         for (let i = 0; i < maxIterations && minError >= stopError; i++) {
             const {
                 //weightChange,
-                potentialWeight,
+                potentialWeights,
                 totalErrors,
             } = this.backPropagate(inputs, targetOutputs)
 
@@ -701,7 +747,7 @@ NEAT.Genome = class {
             minError = Math.min(minError, totalErr / totalErrors.length);
 
             if (minError >= stopError) {
-                lastPotentialWeight = potentialWeight;
+                lastPotentialWeight = potentialWeights;
             }
         }
         if (minError < stopError) {
