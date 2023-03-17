@@ -32,7 +32,7 @@ function setup() {
 
     /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
-    //p.splitConnection(1);
+    p.splitConnection(1);
     p.splitConnection(2);
     p.addConnection(1, 4);
     p.addConnection(2, 3);
@@ -124,7 +124,17 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    let err = p.train(inputs, outputs, left, 0, hw * 2, hh * 2);
+    p.evolve(inputs, outputs, 200, 0.0001);
+
+
+    const totalErrors = p.backPropagate(inputs, outputs, left, 0, hw * 2, hh * 2, false).totalErrors;
+    let totalErr = 0;
+    for (let i = 0; i < totalErrors.length; i++) {
+        totalErr += Math.abs(totalErrors[i]);
+    }
+    const err = totalErr / totalErrors.length;
+
+    //console.log(err);
 
     let m = 3;
     textAlign(CENTER);
@@ -267,6 +277,6 @@ function keyPressed() {
         setup();
         iterations = 0;
     } else if (keyCode == 67) {
-        
+
     }
 }
