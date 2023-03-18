@@ -625,7 +625,7 @@ NEAT.Genome = class {
         potentialWeights.sort((a, b) => Math.abs(b) - Math.abs(a));
 
         let count = 0;
-        for (let i = 0; i < potentialWeights.length; i++) {
+        for (let i = 0; i < 0 && i < potentialWeights.length; i++) {
             let add = false;
             const c = potentialConnections[i];
             if (potentialWeights[i] == NaN) {
@@ -641,36 +641,39 @@ NEAT.Genome = class {
             let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
             let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
 
-            const fx = dx + ((from.x - minVx) * dw * scale);
-            const fy = dy + ((from.y - minVy) * dh * scale);
-            const tx = dx + ((to.x - minVx) * dw * scale);
-            const ty = dy + ((to.y - minVy) * dh * scale);
+            if (from != undefined && to != undefined) {
 
-            let cx = (tx - fx);
-            let cy = (ty - fy);
-            let mx = fx + cx / 2;
-            let my = fy + cy / 2;
-            const cm = Math.sqrt((cx * cx) + (cy * cy));
-            cx *= 10 / cm;
-            cy *= 10 / cm;
-            mx += cy;
-            my -= cx;
+                const fx = dx + ((from.x - minVx) * dw * scale);
+                const fy = dy + ((from.y - minVy) * dh * scale);
+                const tx = dx + ((to.x - minVx) * dw * scale);
+                const ty = dy + ((to.y - minVy) * dh * scale);
 
-            fill(255);
-            noStroke();
-            text(count++, mx + cx * 4, my + cy * 4)
-            setFillColor(potentialWeights[i]);
-            text(potentialWeights[i], dx, dy + (24 * count));
+                let cx = (tx - fx);
+                let cy = (ty - fy);
+                let mx = fx + cx / 2;
+                let my = fy + cy / 2;
+                const cm = Math.sqrt((cx * cx) + (cy * cy));
+                cx *= 10 / cm;
+                cy *= 10 / cm;
+                mx += cy;
+                my -= cx;
 
-            const arrowSize = 1;
+                fill(255);
+                noStroke();
+                text(count++, mx + cx * 4, my + cy * 4)
+                setFillColor(potentialWeights[i]);
+                text(potentialWeights[i], dx, dy + (24 * count));
 
-            //stroke(255);
-            setStrokeColor(potentialWeights[i]);
-            noFill();
-            strokeWeight(1);
-            line(fx + cy, fy - cx, tx + cy, ty - cx);
-            line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
-            line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
+                const arrowSize = 1;
+
+                //stroke(255);
+                setStrokeColor(potentialWeights[i]);
+                noFill();
+                strokeWeight(1);
+                line(fx + cy, fy - cx, tx + cy, ty - cx);
+                line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
+                line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
+            }
         }
 
         return {
@@ -698,10 +701,34 @@ NEAT.Genome = class {
         }
         if (getChance(0.1)) {
             // split? idk
+            for (let i = 0; i < this.connections.length; i++) {
+                if (this.connections[i].enabled) {
+                    potentialMutations[potentialMutations.length] = {
+                        function: () => {
+                            this.splitConnection(i);
+                        },
+                        weight: 0.1,
+                    }
+                }
+            }
+        }
+        if (false && getChance(0.001)) {
+            for (let i = 0; i < this.connections.length; i++) {
+                if (this.connections[i].weight < 0.001) {
+                    potentialMutations[potentialMutations.length] = {
+                        function: () => {
+                            this.connections[i].enabled = false;
+                        },
+                        weight: 0.1,
+                    }
+                }
+            }
         }
 
 
         if (potentialMutations.length <= 0) {
+            fill(255);
+            text("no mutations available", 500, 50);
             return;
         }
 
@@ -712,13 +739,13 @@ NEAT.Genome = class {
 
         const divisor = 1 / totalWeight;
         for (let i = 0; i < potentialMutations.length; i++) {
-            potentialMutations[i].weigh *= divisor;
+            potentialMutations[i].weight *= divisor;
         }
 
         const chosen = random();
         let offset = 0;
         for (let i = 0; i < potentialMutations.length; i++) {
-            if (chosen > offset + potentialMutations[i].weight) {
+            if (chosen < offset + potentialMutations[i].weight) {
                 potentialMutations[i].function();
                 break;
             }
@@ -777,7 +804,7 @@ NEAT.Genome = class {
         const to = this.neatInstance.globalConnections[this.connections[index].index].to;
         const splitNode = this.neatInstance.getSplitConnectionNode(from, to);
 
-        console.log(from, to, splitNode);
+        //console.log(from, to, splitNode);
 
         this.connections[index].enabled = false;
         this.addConnection(from, splitNode, this.connections[index].weight);
