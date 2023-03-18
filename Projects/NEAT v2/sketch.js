@@ -124,7 +124,7 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    p.evolve(inputs, outputs, 50000, 0.001);
+    p.evolve(inputs, outputs, 500, 0.001);
 
 
     const totalErrors = p.backPropagate(inputs, outputs, left, 0, hw * 2, hh * 2, false).totalErrors;

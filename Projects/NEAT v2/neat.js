@@ -572,7 +572,7 @@ NEAT.Genome = class {
         dh -= nodeSize
 
         // constants
-        const learningRate = 0.025 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.005;// / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
         const {
             weightChange,
@@ -704,7 +704,7 @@ NEAT.Genome = class {
                 }
             }
         }
-        if (getChance(0.1)) {
+        if (getChance(0.05)) {
             // split? idk
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
@@ -718,12 +718,13 @@ NEAT.Genome = class {
                 }
             }
         }
-        if (false && getChance(0.001)) {
+         if (false && getChance(0.05)) { // can create recurrent nodes.... check potential node function
             for (let i = 0; i < this.connections.length; i++) {
-                if (this.connections[i].weight < 0.001) {
+                const c = this.connections[i];
+                if (c.enabled && c.weight < 1e-8) {
                     potentialMutations[potentialMutations.length] = {
                         function: () => {
-                            this.connections[i].enabled = false;
+                            c.enabled = false;
                         },
                         weight: 0.1,
                     }
@@ -766,7 +767,7 @@ NEAT.Genome = class {
 
         let minError = stopError;
         let lastPotentialWeight, lastTotalWeightChange = 4;
-        for (let i = 0; i < maxIterations && minError >= stopError && lastTotalWeightChange >= 0.000001; i++) {
+        for (let i = 0; i < maxIterations && minError >= stopError && lastTotalWeightChange >= 1e-14; i++) {
             const {
                 weightChange,
                 potentialWeights,
@@ -783,10 +784,7 @@ NEAT.Genome = class {
                 totalErr += Math.abs(totalErrors[i]);
             }
             minError = Math.min(minError, totalErr / totalErrors.length);
-
-            if (minError >= stopError) {
-                lastPotentialWeight = potentialWeights;
-            }
+            lastPotentialWeight = potentialWeights;
         }
         if (minError < stopError) {
             this.evolutionStopped = true;
