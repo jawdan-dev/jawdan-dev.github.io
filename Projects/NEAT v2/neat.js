@@ -84,6 +84,9 @@ class NEAT {
                     this.population[i].addConnection(j, k + this.inputNodeCount);
                 }
             }
+            this.population[i].connections.forEach(c => {
+                c.enabled = false
+            });
         }
     }
 
@@ -119,6 +122,8 @@ class NEAT {
 
     static distance(g1, g2) {
         // this is the most interesting part
+
+        // -- add checks for if one thing has no nodes.
 
         // Swap if one has more / newer indexes
         if (g1.connections[g1.connections.length - 1].index < g2.connections[g2.connections.length - 1].index) {
@@ -319,7 +324,7 @@ NEAT.Genome = class {
             const g = this.neatInstance.globalConnections[c.index];
 
             if (!c.enabled) {
-                continue;
+                //continue;
             }
 
             const vs = [g.from, g.to];
@@ -405,7 +410,7 @@ NEAT.Genome = class {
         // Derived Errors.
         const errors = [];
         for (let i = nodeInputMaxIndex; i < nodeOutputMaxIndex; i++) {
-            errors[i - nodeInputMaxIndex] = calculatedNodes[i].calculated ? (calculatedNodes[i].value - targetOutput[i - nodeInputMaxIndex]) : 0;
+            errors[i - nodeInputMaxIndex] = (calculatedNodes[i].calculated ? calculatedNodes[i].value : 0) - targetOutput[i - nodeInputMaxIndex];
         }
         // Gradients (for feeding purposes).
         const nodeZs = [];
@@ -567,7 +572,7 @@ NEAT.Genome = class {
         dh -= nodeSize
 
         // constants
-        const learningRate = 0.005 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.025 / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
         const {
             weightChange,
@@ -702,7 +707,8 @@ NEAT.Genome = class {
         if (getChance(0.1)) {
             // split? idk
             for (let i = 0; i < this.connections.length; i++) {
-                if (this.connections[i].enabled) {
+                const c = this.connections[i];
+                if (c.enabled && this.neatInstance.globalConnections[c.index].from != 0) {
                     potentialMutations[potentialMutations.length] = {
                         function: () => {
                             this.splitConnection(i);
@@ -745,11 +751,11 @@ NEAT.Genome = class {
         const chosen = random();
         let offset = 0;
         for (let i = 0; i < potentialMutations.length; i++) {
-            if (chosen < offset + potentialMutations[i].weight) {
+            offset += potentialMutations[i].weight;
+            if (chosen < offset) {
                 potentialMutations[i].function();
                 break;
             }
-            offset += potentialMutations[i].weight;
         }
     }
 
@@ -759,13 +765,18 @@ NEAT.Genome = class {
         }
 
         let minError = stopError;
-        let lastPotentialWeight;
-        for (let i = 0; i < maxIterations && minError >= stopError; i++) {
+        let lastPotentialWeight, lastTotalWeightChange = 4;
+        for (let i = 0; i < maxIterations && minError >= stopError && lastTotalWeightChange >= 0.000001; i++) {
             const {
-                //weightChange,
+                weightChange,
                 potentialWeights,
                 totalErrors,
             } = this.backPropagate(inputs, targetOutputs)
+
+            lastTotalWeightChange = 0;
+            for (let i = 0; i < weightChange.length; i++) {
+                lastTotalWeightChange += weightChange[i];
+            }
 
             let totalErr = 0;
             for (let i = 0; i < totalErrors.length; i++) {
@@ -818,8 +829,6 @@ NEAT.Genome = class {
     /// https://cs.brown.edu/people/rtamassi/gdhandbook/chapters/force-directed.pdf
     draw(x, y, w, h, input = undefined) {
         // edges huh
-
-        const drawBias = true;
 
         if (!this.drawVertices || !this.drawEdges) {
             console.log("making everything :)");
@@ -888,7 +897,7 @@ NEAT.Genome = class {
                             while (targetIndex >= 0 && this.drawVertices[targetIndex].n > v) targetIndex--;
                             targetIndex++;
 
-                            console.log(`inserting vertice index at ${targetIndex} / ${this.drawVertices.length}`);
+                            //console.log(`inserting vertice index at ${targetIndex} / ${this.drawVertices.length}`);
 
                             for (let j = 0; j < this.drawEdges.length; j++) {
                                 if (this.drawEdges[j].from >= targetIndex) this.drawEdges[j].from++;
@@ -949,6 +958,7 @@ NEAT.Genome = class {
         // attraction
         for (let i = 0; i < this.drawEdges.length; i++) {
             let e = this.drawEdges[i];
+
             cx = (this.drawVertices[e.to].x - this.drawVertices[e.from].x) * xFactor;
             cy = this.drawVertices[e.to].y - this.drawVertices[e.from].y;
             cm = Math.sqrt((cx * cx) + (cy * cy));

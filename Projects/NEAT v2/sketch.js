@@ -64,9 +64,9 @@ function setup() {
 
         p.connections[3].enabled = false;
     }
-    console.log(p.getOutput(trainingData[0][0]));
-    console.log(NEAT.distance(neat.population[0], neat.population[1]));
-    console.log(NEAT.distance(neat.population[1], neat.population[2]));
+    //console.log(p.getOutput(trainingData[0][0]));
+    //console.log(NEAT.distance(neat.population[0], neat.population[1]));
+    //console.log(NEAT.distance(neat.population[1], neat.population[2]));
 
     //console.log(p.train([trainingData[0][0]], [trainingData[0][1]]));
 
@@ -124,7 +124,7 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    p.evolve(inputs, outputs, 200, 0.0001);
+    p.evolve(inputs, outputs, 50000, 0.001);
 
 
     const totalErrors = p.backPropagate(inputs, outputs, left, 0, hw * 2, hh * 2, false).totalErrors;
