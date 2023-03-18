@@ -55,7 +55,6 @@ const setFillColor = value => {
     }
 }
 
-
 class NEAT {
     constructor(config) {
         const checkInput = (value, fallback, type = undefined, checkFunc = undefined) => {
@@ -180,6 +179,24 @@ class NEAT {
 
     static crossover(g1, g2) {
         // hmm, this was also an issue.
+    }
+
+    runEpoch(inputs, targetOutputs, maxIterations, stopError) {
+        // Train
+        const generationInformation = [];
+        for (let i = 0; i < this.population.length; i++) {
+            const e = this.population[i];
+            generationInformation[i] = e.evolve(inputs, targetOutputs, maxIterations, stopError)
+        }
+
+        // Attain fitness
+
+
+        // Crossover
+
+
+        // Mutate
+
     }
 }
 
@@ -546,33 +563,9 @@ NEAT.Genome = class {
         }
     }
 
-    backPropagate(inputs, targetOutputs, dx, dy, dw, dh, train = true) {
-        let minVx, maxVx, minVy, maxVy;
-        for (let i = 0; i < this.drawVertices.length; i++) {
-            const x = this.drawVertices[i].x;
-            const y = this.drawVertices[i].y;
-            minVx = minVx != undefined ? Math.min(x, minVx) : x;
-            maxVx = maxVx != undefined ? Math.max(x, maxVx) : x;
-            minVy = minVy != undefined ? Math.min(y, minVy) : y;
-            maxVy = maxVy != undefined ? Math.max(y, maxVy) : y;
-        }
-        maxVx -= minVx;
-        maxVy -= minVy;
-
-        let scale = Math.max(maxVx, maxVy);
-
-        minVx -= (scale - maxVx) / 2
-        minVy -= (scale - maxVy) / 2
-
-        scale = 1 / scale;
-        const nodeSize = Math.sqrt((dw * dh) / this.drawVertices.length) * 0.15 * scale;
-        dx += nodeSize / 2
-        dy += nodeSize / 2
-        dw -= nodeSize
-        dh -= nodeSize
-
+    backPropagate(inputs, targetOutputs, train = true, draw = false) {
         // constants
-        const learningRate = 0.005;// / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
+        const learningRate = 0.01;// / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
 
         const {
             weightChange,
@@ -581,119 +574,72 @@ NEAT.Genome = class {
             totalErrors,
         } = this.getWeightChange(inputs, targetOutputs);
 
+        if (draw) {
+            noStroke();
+            fill(0);
+            rect(0, 0, 200, windowHeight);
+            fill(255);
 
-
-
-
-        noStroke();
-        fill(0);
-        rect(0, 0, 200, windowHeight);
-        fill(255);
-
-        let num = 0;
-        const getDown = () => {
-            return num += 20;
-        }
-
-        textAlign(CENTER);
-
-        text("Error:", 100, getDown());
-        for (let i = 0; i < totalErrors.length; i++) {
-            if (this.lastDis != undefined) {
-                let change = Math.abs(this.lastDis[i]) - Math.abs(totalErrors[i]);
-                let color = Math.min(Math.max(Math.abs(change) * 255 * 100 / learningRate, 0), 255);
-
-                if (change >= 0) {
-                    fill(255 - color, 255, 255 - color);
-                } else {
-                    fill(255, 255 - color, 255 - color);
-                }
-
-                text(totalErrors[i], 100, getDown());
-
-            } else {
-                text(totalErrors[i], 100, getDown());
+            let num = 0;
+            const getDown = () => {
+                return num += 20;
             }
+
+            textAlign(CENTER);
+
+            text("Error:", 100, getDown());
+            for (let i = 0; i < totalErrors.length; i++) {
+                if (this.lastDis != undefined) {
+                    let change = Math.abs(this.lastDis[i]) - Math.abs(totalErrors[i]);
+                    let color = Math.min(Math.max(Math.abs(change) * 255 * 100 / learningRate, 0), 255);
+
+                    if (change >= 0) {
+                        fill(255 - color, 255, 255 - color);
+                    } else {
+                        fill(255, 255 - color, 255 - color);
+                    }
+                    text(totalErrors[i], 100, getDown());
+                } else {
+                    text(totalErrors[i], 100, getDown());
+                }
+            }
+            fill(255);
+            textAlign(LEFT);
         }
-        fill(255);
-        textAlign(LEFT);
 
         if (train) {
             for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
                 this.connections[i].weight += -learningRate * weightChange[i];
-                if (Math.abs(this.connections[i].weight) < 0.01) {
-                    //this.connections[i].enabled = false;
-                }
-            }
-        }
-
-        potentialWeights.sort((a, b) => Math.abs(b) - Math.abs(a));
-
-        let count = 0;
-        for (let i = 0; i < 0 && i < potentialWeights.length; i++) {
-            let add = false;
-            const c = potentialConnections[i];
-            if (potentialWeights[i] == NaN) {
-                if (c.to >= this.neatInstance.inputNodeCount && c.to < this.neatInstance.inputNodeCount + this.neatInstance.outputNodeCount) {
-                    add = true;
-                }
-            } else if (potentialWeights[i] > 0.8) {
-                add = true;
-            }
-
-            //if (add) this.addConnection(c.from, c.to, potentialWeight[i]);
-
-            let from = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.from)];
-            let to = this.drawVertices[this.drawVertices.findIndex(e => e.n == c.to)];
-
-            if (from != undefined && to != undefined) {
-
-                const fx = dx + ((from.x - minVx) * dw * scale);
-                const fy = dy + ((from.y - minVy) * dh * scale);
-                const tx = dx + ((to.x - minVx) * dw * scale);
-                const ty = dy + ((to.y - minVy) * dh * scale);
-
-                let cx = (tx - fx);
-                let cy = (ty - fy);
-                let mx = fx + cx / 2;
-                let my = fy + cy / 2;
-                const cm = Math.sqrt((cx * cx) + (cy * cy));
-                cx *= 10 / cm;
-                cy *= 10 / cm;
-                mx += cy;
-                my -= cx;
-
-                fill(255);
-                noStroke();
-                text(count++, mx + cx * 4, my + cy * 4)
-                setFillColor(potentialWeights[i]);
-                text(potentialWeights[i], dx, dy + (24 * count));
-
-                const arrowSize = 1;
-
-                //stroke(255);
-                setStrokeColor(potentialWeights[i]);
-                noFill();
-                strokeWeight(1);
-                line(fx + cy, fy - cx, tx + cy, ty - cx);
-                line(mx + ((cy - cx) * arrowSize), my - ((cx + cy) * arrowSize), mx, my);
-                line(mx - ((cy + cx) * arrowSize), my + ((cx - cy) * arrowSize), mx, my);
             }
         }
 
         return {
             weightChange: weightChange,
             potentialWeights: potentialWeights,
+            potentialConnections: potentialConnections,
             totalErrors: totalErrors,
         }
     }
 
-    mutate(potentialWeights) {
+    mutate(potentialConnections, potentialWeights) {
         const potentialMutations = [];
 
-        if (getChance(0.1)) {
-            const potentialConnections = this.getPotentialConnections();
+        // Exploration of weight
+        if (getChance(0.005)) {
+            for (let i = 0; i < this.connections.length; i++) {
+                if (this.connections[i].enabled) {
+                    potentialMutations[potentialMutations.length] = {
+                        function: () => {
+                            this.connections[i].weight = getWeight();
+                        },
+                        weight: 0.1,
+                    }
+                }
+            }
 
+        }
+        // Exploration of potential connections
+        if (getChance(0.01)) {
             for (let i = 0; i < potentialConnections.length && i < potentialWeights.length; i++) {
                 potentialMutations[potentialMutations.length] = {
                     function: () => {
@@ -704,11 +650,12 @@ NEAT.Genome = class {
                 }
             }
         }
-        if (getChance(0.05)) {
+        // Exploration of splitting nodes
+        if (getChance(0.005)) {
             // split? idk
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
-                if (c.enabled && this.neatInstance.globalConnections[c.index].from != 0) {
+                if (c.enabled && (!this.neatInstance.biasNode || this.neatInstance.globalConnections[c.index].from != 0)) {
                     potentialMutations[potentialMutations.length] = {
                         function: () => {
                             this.splitConnection(i);
@@ -718,7 +665,8 @@ NEAT.Genome = class {
                 }
             }
         }
-         if (false && getChance(0.05)) { // can create recurrent nodes.... check potential node function
+        // Reducing Size (sometimes detrimental)
+        if (false && getChance(0.05)) { // can create recurrent nodes.... check potential node function
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
                 if (c.enabled && c.weight < 1e-8) {
@@ -761,16 +709,11 @@ NEAT.Genome = class {
     }
 
     evolve(inputs, targetOutputs, maxIterations, stopError) {
-        if (this.evolutionStopped != undefined) {
-            return;
-        }
-
         let minError = stopError;
-        let lastPotentialWeight, lastTotalWeightChange = 4;
+        let lastTotalWeightChange = 4, lastTotalError = 0;
         for (let i = 0; i < maxIterations && minError >= stopError && lastTotalWeightChange >= 1e-14; i++) {
             const {
                 weightChange,
-                potentialWeights,
                 totalErrors,
             } = this.backPropagate(inputs, targetOutputs)
 
@@ -779,18 +722,24 @@ NEAT.Genome = class {
                 lastTotalWeightChange += weightChange[i];
             }
 
-            let totalErr = 0;
+            lastTotalError = 0;
             for (let i = 0; i < totalErrors.length; i++) {
-                totalErr += Math.abs(totalErrors[i]);
+                lastTotalError += Math.abs(totalErrors[i]);
             }
-            minError = Math.min(minError, totalErr / totalErrors.length);
-            lastPotentialWeight = potentialWeights;
+            minError = Math.min(minError, lastTotalError / totalErrors.length);
+
         }
-        if (minError < stopError) {
-            this.evolutionStopped = true;
-            return;
-        }
-        this.mutate(lastPotentialWeight);
+        const {
+            potentialConnections,
+            potentialWeights,
+        } = this.backPropagate(inputs, targetOutputs, false);
+        //this.mutate(potentialConnections, potentialWeights);
+        return {
+            stopped: minError < stopError,
+            totalError: lastTotalError,
+            potentialConnections: potentialConnections,
+            potentialWeights: potentialWeights
+        };
     }
 
     getOutput(input) {

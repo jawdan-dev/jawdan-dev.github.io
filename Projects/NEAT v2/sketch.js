@@ -127,7 +127,7 @@ function draw() {
     p.evolve(inputs, outputs, 500, 0.001);
 
 
-    const totalErrors = p.backPropagate(inputs, outputs, left, 0, hw * 2, hh * 2, false).totalErrors;
+    const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
     let totalErr = 0;
     for (let i = 0; i < totalErrors.length; i++) {
         totalErr += Math.abs(totalErrors[i]);
