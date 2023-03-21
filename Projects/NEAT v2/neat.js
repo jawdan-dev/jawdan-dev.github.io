@@ -179,9 +179,12 @@ class NEAT {
 
     static crossover(g1, g2) {
         // hmm, this was also an issue.
+        return g1;
     }
 
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
+        const newPopulation = [];
+
         // Train
         const generationInformation = [];
         for (let i = 0; i < this.population.length; i++) {
@@ -190,13 +193,46 @@ class NEAT {
         }
 
         // Attain fitness
+        let maxFitness = 0;
+        generationInformation.forEach(g => {
+            g.totalError = Math.max(0.0001, Math.abs(g.totalError));
+            maxFitness = Math.max(maxFitness, g.totalError);
+        });
+        let totalFitness = 0;
+        generationInformation.forEach(g => {
+            g.totalError = maxFitness - g.totalError;
+            totalFitness += g.totalError;
+        });
+
+        const getFromGeneration = () => {
+            const position = random() * totalFitness;
+            let offset = 0;
+            for (let i = 0; i < this.population.length && i < generationInformation.length; i++) {
+                offset += generationInformation[i].totalError;
+                if (position < offset) {
+                    return this.population[i].clone();
+                }
+            }
+            return this.population[0].clone();
+        }
+
+        for (let i = 0; i < this.population.length; i++) {
+            // Crossover
+            const g1 = getFromGeneration();
+            const g2 = getFromGeneration();
+
+            const g = NEAT.crossover(g1, g2);
 
 
-        // Crossover
+            // Mutate
+            g.mutate(inputs, targetOutputs);
+
+            // Add to new population.
+            newPopulation[newPopulation.length] = g;
+        }
 
 
-        // Mutate
-
+        this.population = newPopulation;
     }
 }
 
@@ -204,7 +240,7 @@ NEAT.Genome = class {
     constructor(neatInstance) {
         this.neatInstance = neatInstance;
         this.connections = [];
-        this.fitness = 0;
+        //this.fitness = 0;
     }
 
     activationFunction(x) {
@@ -224,12 +260,40 @@ NEAT.Genome = class {
     }
 
     clone() {
-        let clone = new Genome(this.neatInstance);
+        let clone = new NEAT.Genome(this.neatInstance);
         for (let i = 0; i < this.connections.length; i++) {
             let c = this.connections[i];
             clone.connections[i] = new NEAT.Genome.Gene(c.index, c.weight, c.enabled);
         }
-        clonse.fitness = this.fitness;
+
+        if (this.drawVertices != undefined && this.drawEdges != undefined) {
+            clone.drawVertices = [];
+            clone.drawEdges = [];
+
+            for (let i = 0; i < this.drawVertices.length; i++) {
+                const v = this.drawVertices[i];
+                clone.drawVertices[i] = {
+                    x: v.x,
+                    y: v.y,
+                    dx: v.dx,
+                    dy: v.dy,
+                    n: v.n,
+
+                    b: v.b,
+                    i: v.i,
+                    o: v.o,
+                }
+            }
+            for (let i = 0; i < this.drawEdges.length; i++) {
+                let e = this.drawEdges[i];
+                clone.drawEdges[i] = {
+                    from: e.from,
+                    to: e.to,
+                    n: e.n,
+                };
+            }
+        }
+        //clone.fitness = this.fitness;
         return clone;
     }
 
@@ -621,7 +685,7 @@ NEAT.Genome = class {
         }
     }
 
-    mutate(potentialConnections, potentialWeights) {
+    mutate(inputs, targetOutputs) {
         const potentialMutations = [];
 
         // Exploration of weight
@@ -640,6 +704,10 @@ NEAT.Genome = class {
         }
         // Exploration of potential connections
         if (getChance(0.01)) {
+            const {
+                potentialConnections,
+                potentialWeights,
+            } = this.backPropagate(inputs, targetOutputs, false);
             for (let i = 0; i < potentialConnections.length && i < potentialWeights.length; i++) {
                 potentialMutations[potentialMutations.length] = {
                     function: () => {
@@ -666,16 +734,14 @@ NEAT.Genome = class {
             }
         }
         // Reducing Size (sometimes detrimental)
-        if (false && getChance(0.05)) { // can create recurrent nodes.... check potential node function
+        if (getChance(0.01)) { // can create recurrent nodes.... check potential node function
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
-                if (c.enabled && c.weight < 1e-8) {
-                    potentialMutations[potentialMutations.length] = {
-                        function: () => {
-                            c.enabled = false;
-                        },
-                        weight: 0.1,
-                    }
+                potentialMutations[potentialMutations.length] = {
+                    function: () => {
+                        c.enabled = !c.enabled;
+                    },
+                    weight: 0.1,
                 }
             }
         }
@@ -729,16 +795,10 @@ NEAT.Genome = class {
             minError = Math.min(minError, lastTotalError / totalErrors.length);
 
         }
-        const {
-            potentialConnections,
-            potentialWeights,
-        } = this.backPropagate(inputs, targetOutputs, false);
         //this.mutate(potentialConnections, potentialWeights);
         return {
             stopped: minError < stopError,
             totalError: lastTotalError,
-            potentialConnections: potentialConnections,
-            potentialWeights: potentialWeights
         };
     }
 

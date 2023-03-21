@@ -25,7 +25,7 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 10,
+        populationSize: 200,
         biasNode: true,
     });
     console.log(neat);
@@ -33,9 +33,12 @@ function setup() {
     /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
     //p.splitConnection(1);
-    //p.splitConnection(2);
-    //p.addConnection(1, 4);
-    //p.addConnection(2, 3);
+    p.splitConnection(2);
+    p.addConnection(1, 4);
+    p.addConnection(2, 3);
+    p.addConnection(1, 3);
+
+
     //for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
     //    p.connections[i].enabled = false;
     //}
@@ -109,12 +112,10 @@ function draw() {
     const p = neat.population[0];
 
     //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
-    let move = p.draw(left, 0, hw * 2, hh * 2, trainingData[trainingDataIndex][0]);
-    //p.draw(left + hw, 0, hw, hh, trainingData[1][0]);
-    //p.draw(left, hh, hw, hh, trainingData[2][0]);
-    //p.draw(left + hw, hh, hw, hh, trainingData[3][0]);
-
-    p.getPotentialConnections(left, 0, hw * 2, hh * 2);
+    let move = p.draw(left, 0, hw, hh, trainingData[trainingDataIndex][0]);
+    neat.population[1].draw(left + hw, 0, hw, hh, trainingData[1][0]);
+    neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
+    neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
 
     let inputs = [];
     let outputs = [];
@@ -124,8 +125,8 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    p.evolve(inputs, outputs, 500, 0.001);
-
+    //p.evolve(inputs, outputs, 500, 0.001);
+    neat.runEpoch(inputs, outputs, 500, 0.00001);
 
     const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
     let totalErr = 0;
