@@ -126,7 +126,7 @@ function draw() {
     }
 
     //p.evolve(inputs, outputs, 500, 0.001);
-    neat.runEpoch(inputs, outputs, 500, 0.00001);
+    neat.runEpoch(inputs, outputs, 500, 1e-8);
 
     const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
     let totalErr = 0;

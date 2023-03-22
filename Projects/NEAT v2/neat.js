@@ -183,6 +183,10 @@ class NEAT {
     }
 
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
+        if (this.stopped != undefined) {
+            return;
+        }
+
         const newPopulation = [];
 
         // Train
@@ -194,10 +198,24 @@ class NEAT {
 
         // Attain fitness
         let maxFitness = 0;
-        generationInformation.forEach(g => {
-            g.totalError = Math.max(0.0001, Math.abs(g.totalError));
+        let smallestError = undefined;
+        for (let i = 0; i < generationInformation.length && i < this.population.length; i++) {
+            const g = generationInformation[i];
+            const p = this.population[i];
+
+            if (smallestError == undefined || g.totalError < smallestError) {
+                smallestError = g.totalError;
+            }
+
+            let totalConnections = 0;
+            for (let j = 0; j < p.connections.length; j++) {
+                if (p.connections[j].enabled) {
+                    totalConnections++;
+                }
+            }
+            g.totalError = Math.max(1e-10, Math.abs(g.totalError / totalConnections));
             maxFitness = Math.max(maxFitness, g.totalError);
-        });
+        };
         let totalFitness = 0;
         generationInformation.forEach(g => {
             g.totalError = maxFitness - g.totalError;
@@ -231,8 +249,12 @@ class NEAT {
             newPopulation[newPopulation.length] = g;
         }
 
-
         this.population = newPopulation;
+
+        if (smallestError != undefined && smallestError < stopError) {
+            this.stopped = true;
+            console.log("stopped", smallestError, this.stopped);
+        }
     }
 }
 
@@ -737,15 +759,18 @@ NEAT.Genome = class {
         if (getChance(0.01)) { // can create recurrent nodes.... check potential node function
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
-                potentialMutations[potentialMutations.length] = {
-                    function: () => {
-                        c.enabled = !c.enabled;
-                    },
-                    weight: 0.1,
+                if (c.enabled) {
+                    potentialMutations[potentialMutations.length] = {
+                        function: () => {
+                            c.enabled = false;
+                            // remove all connections that this is singularly connected to.
+                            // a 'simplify connection' would be hella cool too (opposite of slit connection)
+                        },
+                        weight: 0.1,
+                    }
                 }
             }
         }
-
 
         if (potentialMutations.length <= 0) {
             fill(255);
