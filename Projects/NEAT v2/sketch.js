@@ -27,16 +27,17 @@ function setup() {
         outputNodeCount: trainingData[0][1].length,
         populationSize: 200,
         biasNode: true,
+        drawFrames: 40
     });
     console.log(neat);
 
     /// so like is th okay i do wonter hwo mayn this is writing befcause oof
     let p = neat.population[0];
-    //p.splitConnection(1);
-    p.splitConnection(2);
-    p.addConnection(1, 4);
-    p.addConnection(2, 3);
-    p.addConnection(1, 3);
+
+    //p.splitConnection(2);
+    //p.addConnection(1, 4);
+    //p.addConnection(2, 3);
+    //p.addConnection(1, 3);
 
 
     //for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
@@ -109,13 +110,7 @@ function draw() {
     let hw = (windowWidth - left) / 2;
     let hh = windowHeight / 2;
 
-    const p = neat.population[0];
 
-    //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
-    let move = p.draw(left, 0, hw, hh, trainingData[trainingDataIndex][0]);
-    neat.population[1].draw(left + hw, 0, hw, hh, trainingData[1][0]);
-    neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
-    neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
 
     let inputs = [];
     let outputs = [];
@@ -125,15 +120,32 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    //p.evolve(inputs, outputs, 500, 0.001);
-    neat.runEpoch(inputs, outputs, 500, 1e-8);
+    neat.population.forEach(p => {
+        p.calculateFitness(inputs, outputs);
+    });
+    neat.population.sort((a, b) => {
+        return b.fitness - a.fitness;
+    })
 
-    const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
-    let totalErr = 0;
-    for (let i = 0; i < totalErrors.length; i++) {
-        totalErr += Math.abs(totalErrors[i]);
-    }
-    const err = totalErr / totalErrors.length;
+    const p = neat.population[0];
+
+    //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
+    let move = p.draw(left, 0, hw, hh, trainingData[trainingDataIndex][0]);
+    neat.population[1].draw(left + hw, 0, hw, hh, trainingData[1][0]);
+    neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
+    neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
+
+
+    //p.evolve(inputs, outputs, 500, 0.001);
+    neat.runEpoch(inputs, outputs, 1000, 1e-5);
+
+    //const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
+
+    //let totalErr = 0;
+    //for (let i = 0; i < totalErrors.length; i++) {
+    //    totalErr += Math.abs(totalErrors[i]);
+    //}
+    const err = undefined;//totalErr / totalErrors.length;
 
     //console.log(err);
 
@@ -160,9 +172,9 @@ function draw() {
         }
 
         stroke(255);
-        drawFunction(neat.population[0].activationFunction, gx, gy, gw, gh, m);
+        drawFunction(p.activationFunction, gx, gy, gw, gh, m);
         stroke(255, 0, 0);
-        drawFunction(neat.population[0].activationFunctionDerivitive, gx, gy, gw, gh, m);
+        drawFunction(p.activationFunctionDerivitive, gx, gy, gw, gh, m);
     }
 
 
@@ -185,7 +197,7 @@ function draw() {
     }
 
 
-    drawTrainingData(0, 600, left, 250);
+    drawTrainingData(0, 600, left, 250, p);
     textAlign(LEFT);
 
     if (err != undefined && err < 0.0005) {
@@ -218,7 +230,7 @@ function drawFunction(f, dx, dy, dw, dh, m) {
     }
 }
 
-function drawTrainingData(dx, dy, dw, dh) {
+function drawTrainingData(dx, dy, dw, dh, p) {
     let data = trainingData;
 
     let rows = data.length + 0.1;
@@ -263,7 +275,7 @@ function drawTrainingData(dx, dy, dw, dh) {
             } else if (i < ll) {
                 value = data[j][1][i - l];
             } else {
-                value = neat.population[0].getOutput(data[j][0])[i - ll];
+                value = p.getOutput(data[j][0])[i - ll];
             }
             setFillColor(value);
             rect(dx + x, dy + y, dw / columns, dh / rows);

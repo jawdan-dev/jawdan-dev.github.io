@@ -64,6 +64,9 @@ class NEAT {
             return fallback;
         }
 
+        this.drawFrames = checkInput(config.drawFrames, 1, 'number', Number.isInteger);
+        this.currentDrawFrame = 0;
+
         this.biasNode = checkInput(config.biasNode, true, 'boolean');
 
         this.inputNodeCount = checkInput(config.inputNodeCount, 1, 'number', Number.isInteger);
@@ -177,56 +180,113 @@ class NEAT {
         return (c1 * excess) + (c2 * disjoint) + (c3) * weightDifference;
     }
 
-    static crossover(g1, g2) {
-        // hmm, this was also an issue.
-        return g1;
+    crossover(g1, g2) {
+        const equalFitness = g1.fitness == g2.fitness;
+        if (g1.fitness < g2.fitness) {
+            let g = g1;
+            g1 = g2;
+            g2 = g;
+        }
+
+        let child = new NEAT.Genome(this);
+
+        let g1Index = 0,
+            g2Index = 0;
+        const g = this.globalConnections;
+        while (g1Index < g1.connections.length && g2Index < g2.connections.length) {
+            const
+                gene1 = g1.connections[g1Index],
+                gene2 = g2.connections[g2Index];
+            const
+                g1i = gene1.index,
+                g2i = gene2.index;
+
+            if (g1i == g2i) {
+                const from = g[g1i].from;
+                const to = g[g1i].to;
+
+                child.addConnection(
+                    from, to,
+                    getChance(0.5) ? gene1.weight : gene2.weight,
+                    gene1.enabled != gene2.enabled ? !getChance(0.75) : true
+                );
+                g1Index++;
+                g2Index++;
+            } else if (g1i < g2i) {
+                if (!equalFitness || getChance(0.5)) {
+                    child.addConnection(g[g1i].from, g[g1i].to, gene1.weight, gene1.enabled);
+                }
+                g1Index++;
+            } else {
+                if (equalFitness && getChance(0.5)) {
+                    child.addConnection(g[g2i].from, g[g2i].to, gene2.weight, gene2.enabled);
+                }
+                g2Index++;
+            }
+        }
+
+        while (g1Index < g1.connections.length) {
+            if (getChance(0.5)) {
+                let c = g1.connections[g1Index];
+                child.addConnection(g[c.index].from, g[c.index].to, c.weight, c.enabled);
+            }
+            g1Index++;
+        }
+        return child;
     }
 
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
         if (this.stopped != undefined) {
+            //return;
+        }
+
+        const iterations = Math.ceil(maxIterations / this.drawFrames);
+
+        // Train
+        let stopped = false;
+        for (let i = 0; i < this.population.length; i++) {
+            const e = this.population[i];
+            stopped ||= e.backPropagate(inputs, targetOutputs, iterations, stopError);
+        }
+        if (stopped) {
+            this.stopped = true;
+            //return;
+        }
+
+        this.currentDrawFrame++;
+        if (this.currentDrawFrame < this.drawFrames) {
             return;
         }
 
+        this.currentDrawFrame = 0;
+
         const newPopulation = [];
-
-        // Train
-        const generationInformation = [];
-        for (let i = 0; i < this.population.length; i++) {
-            const e = this.population[i];
-            generationInformation[i] = e.evolve(inputs, targetOutputs, maxIterations, stopError)
-        }
-
         // Attain fitness
-        let maxFitness = 0;
-        let smallestError = undefined;
-        for (let i = 0; i < generationInformation.length && i < this.population.length; i++) {
-            const g = generationInformation[i];
+        let minFitness = undefined, maxFitness = undefined;
+        for (let i = 0; i < this.population.length; i++) {
             const p = this.population[i];
 
-            if (smallestError == undefined || g.totalError < smallestError) {
-                smallestError = g.totalError;
-            }
+            p.calculateFitness(inputs, targetOutputs);
 
-            let totalConnections = 0;
-            for (let j = 0; j < p.connections.length; j++) {
-                if (p.connections[j].enabled) {
-                    totalConnections++;
-                }
-            }
-            g.totalError = Math.max(1e-10, Math.abs(g.totalError / totalConnections));
-            maxFitness = Math.max(maxFitness, g.totalError);
+            minFitness = minFitness == undefined ? p.fitness : Math.min(minFitness, p.fitness);
+            maxFitness = maxFitness == undefined ? p.fitness : Math.max(maxFitness, p.fitness);
         };
+        minFitness -= 1;
+
         let totalFitness = 0;
-        generationInformation.forEach(g => {
-            g.totalError = maxFitness - g.totalError;
-            totalFitness += g.totalError;
+
+        // Normalize Fitnesss (to be positive, without affecting results)
+        this.population.forEach(p => {
+            p.fitness = mapRange(p.fitness, minFitness, maxFitness, 0, 1);
+            totalFitness += p.fitness;
         });
 
         const getFromGeneration = () => {
             const position = random() * totalFitness;
             let offset = 0;
-            for (let i = 0; i < this.population.length && i < generationInformation.length; i++) {
-                offset += generationInformation[i].totalError;
+            for (let i = 0; i < this.population.length; i++) {
+                const p = this.population[i];
+                offset += p.fitness;
                 if (position < offset) {
                     return this.population[i].clone();
                 }
@@ -239,8 +299,7 @@ class NEAT {
             const g1 = getFromGeneration();
             const g2 = getFromGeneration();
 
-            const g = NEAT.crossover(g1, g2);
-
+            const g = g1;// this.crossover(g1, g2);
 
             // Mutate
             g.mutate(inputs, targetOutputs);
@@ -250,11 +309,6 @@ class NEAT {
         }
 
         this.population = newPopulation;
-
-        if (smallestError != undefined && smallestError < stopError) {
-            this.stopped = true;
-            console.log("stopped", smallestError, this.stopped);
-        }
     }
 }
 
@@ -262,7 +316,7 @@ NEAT.Genome = class {
     constructor(neatInstance) {
         this.neatInstance = neatInstance;
         this.connections = [];
-        //this.fitness = 0;
+        this.fitness = 0;
     }
 
     activationFunction(x) {
@@ -283,6 +337,7 @@ NEAT.Genome = class {
 
     clone() {
         let clone = new NEAT.Genome(this.neatInstance);
+        clone.fitness = this.fitness;
         for (let i = 0; i < this.connections.length; i++) {
             let c = this.connections[i];
             clone.connections[i] = new NEAT.Genome.Gene(c.index, c.weight, c.enabled);
@@ -319,13 +374,13 @@ NEAT.Genome = class {
         return clone;
     }
 
-    addConnection(from, to, weight) {
+    addConnection(from, to, weight, enabled) {
         if (from == to) return;
         const connectionIndex = this.neatInstance.getConnection(from, to);
 
         const foundIndex = this.connections.findIndex(x => x.index == connectionIndex);
         if (foundIndex != -1) {
-            this.connections[foundIndex].enabled = true;
+            this.connections[foundIndex].enabled = enabled != undefined ? enabled : true;
             if (weight != undefined) {
                 this.connections[foundIndex].weight = weight;
             }
@@ -333,7 +388,11 @@ NEAT.Genome = class {
         }
 
         const newIndex = this.connections.length;
-        this.connections[newIndex] = new NEAT.Genome.Gene(connectionIndex, weight != undefined ? weight : getWeight());
+        this.connections[newIndex] = new NEAT.Genome.Gene(
+            connectionIndex,
+            weight != undefined ? weight : getWeight(),
+            enabled != undefined ? enabled : true
+        );
 
         // i think this sort is needed (could be made faster with just inserting into the correct position :) )
         this.connections.sort((a, b) => {
@@ -409,7 +468,7 @@ NEAT.Genome = class {
         return nodes;
     }
 
-    getPotentialConnections(dx, dy, dw, dh) {
+    getPotentialConnections() {
         if (this.debug == undefined) {
             this.debug = true;
         }
@@ -427,7 +486,7 @@ NEAT.Genome = class {
             const g = this.neatInstance.globalConnections[c.index];
 
             if (!c.enabled) {
-                //continue;
+                continue;
             }
 
             const vs = [g.from, g.to];
@@ -649,99 +708,131 @@ NEAT.Genome = class {
         }
     }
 
-    backPropagate(inputs, targetOutputs, train = true, draw = false) {
-        // constants
-        const learningRate = 0.01;// / this.neatInstance.nodeCount;//Math.min(inputs.length, targetOutputs.length);
+    backPropagate(inputs, targetOutputs, iterations, stopError) {
+        const learningRate = 0.01;
 
-        const {
-            weightChange,
-            potentialWeights,
-            potentialConnections,
-            totalErrors,
-        } = this.getWeightChange(inputs, targetOutputs);
-
-        if (draw) {
-            noStroke();
-            fill(0);
-            rect(0, 0, 200, windowHeight);
-            fill(255);
-
-            let num = 0;
-            const getDown = () => {
-                return num += 20;
-            }
-
-            textAlign(CENTER);
-
-            text("Error:", 100, getDown());
-            for (let i = 0; i < totalErrors.length; i++) {
-                if (this.lastDis != undefined) {
-                    let change = Math.abs(this.lastDis[i]) - Math.abs(totalErrors[i]);
-                    let color = Math.min(Math.max(Math.abs(change) * 255 * 100 / learningRate, 0), 255);
-
-                    if (change >= 0) {
-                        fill(255 - color, 255, 255 - color);
-                    } else {
-                        fill(255, 255 - color, 255 - color);
+        /*
+                if (draw) {
+                    noStroke();
+                    fill(0);
+                    rect(0, 0, 200, windowHeight);
+                    fill(255);
+        
+                    let num = 0;
+                    const getDown = () => {
+                        return num += 20;
                     }
-                    text(totalErrors[i], 100, getDown());
-                } else {
-                    text(totalErrors[i], 100, getDown());
+        
+                    textAlign(CENTER);
+        
+                    text("Error:", 100, getDown());
+                    for (let i = 0; i < totalErrors.length; i++) {
+                        if (this.lastDis != undefined) {
+                            let change = Math.abs(this.lastDis[i]) - Math.abs(totalErrors[i]);
+                            let color = Math.min(Math.max(Math.abs(change) * 255 * 100 / learningRate, 0), 255);
+        
+                            if (change >= 0) {
+                                fill(255 - color, 255, 255 - color);
+                            } else {
+                                fill(255, 255 - color, 255 - color);
+                            }
+                            text(totalErrors[i], 100, getDown());
+                        } else {
+                            text(totalErrors[i], 100, getDown());
+                        }
+                    }
+                    fill(255);
+                    textAlign(LEFT);
                 }
-            }
-            fill(255);
-            textAlign(LEFT);
-        }
+        */
 
-        if (train) {
+        let minError = stopError + 1;
+        let lastTotalError = 0;
+        for (let i = 0; i < iterations && minError >= stopError; i++) {
+            const {
+                weightChange,
+                totalErrors
+            } = this.getWeightChange(inputs, targetOutputs);
+
             for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
                 this.connections[i].weight += -learningRate * weightChange[i];
             }
+
+            lastTotalError = 0;
+            for (let i = 0; i < totalErrors.length; i++) {
+                lastTotalError += Math.abs(totalErrors[i] * totalErrors[i]);
+            }
+            minError = Math.min(minError, Math.sqrt(lastTotalError / totalErrors.length));
         }
 
-        return {
-            weightChange: weightChange,
-            potentialWeights: potentialWeights,
-            potentialConnections: potentialConnections,
-            totalErrors: totalErrors,
+        return minError < stopError;
+    }
+
+    calculateFitness(inputs, targetOutputs) {
+        // Root Mean Squared Error
+        let totalError = 0;
+        for (let n = 0; n < inputs.length && n < targetOutputs.length; n++) {
+            const output = this.getOutput(inputs[n]);
+
+
+            for (let i = 0; i < output.length && i < targetOutputs[n].length; i++) {
+                totalError += Math.pow(targetOutputs[n][i] - output[i], 2);
+            }
         }
+        totalError /= Math.min(inputs.length, targetOutputs.length);
+
+        let totalConnections = 0;
+        this.connections.forEach(c => {
+            if (c.enabled) { totalConnections++; }
+        });
+
+        // Scores
+        const errorScore = -Math.sqrt(totalError);  // Fitness will be in negative space.
+        const connectionScore = Math.log(Math.pow(totalConnections + 1, 0.25)) + 1;
+
+        this.fitness = errorScore * connectionScore;
     }
 
     mutate(inputs, targetOutputs) {
         const potentialMutations = [];
 
+        const splitChanceMultiplier = 0.2;
+        const connectionChanceMultiplier = 0.2;
+        const removeConnectionChanceMultiplier = 0.1;
+        const weightChanceMultiplier = 1 - (splitChanceMultiplier + connectionChanceMultiplier + removeConnectionChanceMultiplier);
+
         // Exploration of weight
-        if (getChance(0.005)) {
+        {
             for (let i = 0; i < this.connections.length; i++) {
                 if (this.connections[i].enabled) {
                     potentialMutations[potentialMutations.length] = {
                         function: () => {
-                            this.connections[i].weight = getWeight();
+                            this.connections[i].weight += getWeight();
                         },
-                        weight: 0.1,
+                        weight: 0.1 * weightChanceMultiplier,
                     }
                 }
             }
-
         }
         // Exploration of potential connections
-        if (getChance(0.01)) {
+        {
             const {
                 potentialConnections,
                 potentialWeights,
-            } = this.backPropagate(inputs, targetOutputs, false);
+            } = this.getWeightChange(inputs, targetOutputs);
+
             for (let i = 0; i < potentialConnections.length && i < potentialWeights.length; i++) {
                 potentialMutations[potentialMutations.length] = {
                     function: () => {
                         const c = potentialConnections[i];
                         this.addConnection(c.from, c.to, potentialWeights[i]);
                     },
-                    weight: Math.max(0.1, Math.abs(potentialWeights[i]))
+                    weight: Math.max(0.1, Math.abs(potentialWeights[i])) * connectionChanceMultiplier
                 }
             }
         }
         // Exploration of splitting nodes
-        if (getChance(0.005)) {
+        {
             // split? idk
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
@@ -750,13 +841,13 @@ NEAT.Genome = class {
                         function: () => {
                             this.splitConnection(i);
                         },
-                        weight: 0.1,
+                        weight: 0.1 * splitChanceMultiplier,
                     }
                 }
             }
         }
         // Reducing Size (sometimes detrimental)
-        if (getChance(0.01)) { // can create recurrent nodes.... check potential node function
+        { // can create recurrent nodes.... check potential node function
             for (let i = 0; i < this.connections.length; i++) {
                 const c = this.connections[i];
                 if (c.enabled) {
@@ -766,7 +857,7 @@ NEAT.Genome = class {
                             // remove all connections that this is singularly connected to.
                             // a 'simplify connection' would be hella cool too (opposite of slit connection)
                         },
-                        weight: 0.1,
+                        weight: 0.1 * removeConnectionChanceMultiplier,
                     }
                 }
             }
@@ -797,34 +888,6 @@ NEAT.Genome = class {
                 break;
             }
         }
-    }
-
-    evolve(inputs, targetOutputs, maxIterations, stopError) {
-        let minError = stopError;
-        let lastTotalWeightChange = 4, lastTotalError = 0;
-        for (let i = 0; i < maxIterations && minError >= stopError && lastTotalWeightChange >= 1e-14; i++) {
-            const {
-                weightChange,
-                totalErrors,
-            } = this.backPropagate(inputs, targetOutputs)
-
-            lastTotalWeightChange = 0;
-            for (let i = 0; i < weightChange.length; i++) {
-                lastTotalWeightChange += weightChange[i];
-            }
-
-            lastTotalError = 0;
-            for (let i = 0; i < totalErrors.length; i++) {
-                lastTotalError += Math.abs(totalErrors[i]);
-            }
-            minError = Math.min(minError, lastTotalError / totalErrors.length);
-
-        }
-        //this.mutate(potentialConnections, potentialWeights);
-        return {
-            stopped: minError < stopError,
-            totalError: lastTotalError,
-        };
     }
 
     getOutput(input) {
@@ -961,6 +1024,9 @@ NEAT.Genome = class {
                 }
             }
         }
+
+        fill(255);
+        text(this.fitness, x + 10, y + 10);
 
         let xFactor = w / h;
 
