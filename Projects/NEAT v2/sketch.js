@@ -1,11 +1,22 @@
 const tt = 1;
 const tf = -1;
 
-const trainingData = [
+const trainingData1 = [
     [[tt, tt], [tf]],
     [[tf, tf], [tf]],
     [[tt, tf], [tt]],
     [[tf, tt], [tt]],
+];
+
+const class1 = 1;
+const class2 = -1;
+const trainingData = [
+    [[0.1, 0.75], [class2]],
+    [[0.4, 0.6], [class2]],
+    [[0.75, 0.6], [class1]],
+    [[0.15, 0.25], [class1]],
+    [[0.2, 0.4], [class2]],
+    [[0.6, 0.35], [class1]],
 ];
 
 var neat;
@@ -25,7 +36,7 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 200,
+        populationSize: 100,
         biasNode: true,
         drawFrames: 40
     });
@@ -135,6 +146,8 @@ function draw() {
     neat.population[1].draw(left + hw, 0, hw, hh, trainingData[1][0]);
     neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
     neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
+
+    drawFunctionGraph(left + 100, 800, 400, 400, p);
 
     fill(255);
     noStroke();
@@ -296,5 +309,60 @@ function keyPressed() {
         iterations = 0;
     } else if (keyCode == 67) {
 
+    }
+}
+
+function drawFunctionGraph(bx, by, bw, bh, p) {
+    stroke(255);
+    noFill();
+    strokeWeight(1);
+    rect(bx, by, bw, bh);
+    noStroke();
+
+    const minRange = 0;
+    const maxRange = 1;
+    const totalRange = maxRange - minRange;
+
+    const cut = 100;
+    const increment = totalRange / cut;
+
+    const boxW = bw / cut + 1;
+    const boxH = bh / cut + 1;
+
+    for (let x = 0; x <= totalRange; x += increment) {
+        for (let y = 0; y <= totalRange; y += increment) {
+            let dx = ((x / totalRange)) * bw;
+            let dy = (1 - (y / totalRange)) * bh;
+
+            let ax = x + minRange;
+            let ay = y + minRange;
+            let value = p.getOutput([ax, ay])[0];
+
+            if (value > 0) {
+                value = min(value, 2);
+                fill(0, 150 * value, 255 * value);
+            } else {
+                value = min(-value, 2);
+                fill(255 * value, 150 * value, 0);
+            }
+
+            let bwo = Math.min(boxW + bx + dx, bx + bw) - (bx + dx);
+            let bho = Math.min(boxH + by + dy, by + bh) - (by + dy);
+            rect(bx + dx, by + dy, bwo, bho);
+        }
+    }
+
+    stroke(255);
+    for (let i = 0; i < trainingData.length; i++) {
+        let x = (((trainingData[i][0][0] - minRange) / totalRange)) * bw;
+        let y = (1 - ((trainingData[i][0][1] - minRange) / totalRange)) * bh;
+
+        if (trainingData[i][1][0] == 1) {
+            fill(0, 255, 0);
+        } else {
+            fill(255, 0, 0);
+
+        }
+        circle(x + bx, y + by, 10);
     }
 }

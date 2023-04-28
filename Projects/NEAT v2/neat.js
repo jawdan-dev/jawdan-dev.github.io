@@ -86,6 +86,9 @@ class NEAT {
                     this.population[i].addConnection(j, k + this.inputNodeCount);
                 }
             }
+            this.population[i].connections.forEach(c => {
+                //c.enabled = false; // this is shown to create thiccccc neural networks
+            })
         }
     }
 
