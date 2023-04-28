@@ -974,17 +974,17 @@ NEAT.Genome = class {
     }
 
     addLooseConnection(from, to, weight, enabled) {
-        this.addConnection(from, to, weight, enabled);
-        if (this.checkForRecursion()) {
-            this.connections.splice(this.connections.length - 1, 1);
-
-            if (from >= this.neatInstance.inputNodeCount) {
-
-                this.addConnection(to, from, weight, enabled);
-                if (this.checkForRecursion()) {
-                    this.connections.splice(this.connections.length - 1, 1);
-                }
-            }
+        let test = this.clone();
+        test.addConnection(from, to, weight, enabled);
+        if (!test.checkForRecursion()) {
+            this.addConnection(from, to, weight, enabled);
+            return;
+        }
+        test = this.clone();
+        test.addConnection(to, from, weight, enabled);
+        if (!test.checkForRecursion()) {
+            this.addConnection(to, from, weight, enabled);
+            return;
         }
     }
 

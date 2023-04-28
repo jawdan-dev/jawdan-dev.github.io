@@ -11,12 +11,20 @@ const trainingData1 = [
 const class1 = 1;
 const class2 = -1;
 const trainingData = [
-    [[0.1, 0.75], [class2]],
-    [[0.4, 0.6], [class2]],
-    [[0.75, 0.6], [class1]],
-    [[0.15, 0.25], [class1]],
-    [[0.2, 0.4], [class2]],
-    [[0.6, 0.35], [class1]],
+    //[[0.1, 0.75], [class2]],
+    //[[0.4, 0.6], [class2]],
+    //[[0.75, 0.6], [class1]],
+    //[[0.15, 0.25], [class1]],
+    //[[0.2, 0.4], [class2]],
+    //[[0.6, 0.35], [class1]],
+    [[0.25, 0.25], [class2]],
+    [[0.25, 0.75], [class1]],
+    [[0.75, 0.25], [class1]],
+    [[0.75, 0.75], [class2]],
+
+    [[0.5, 0.5], [class2]],
+    [[0.625, 0.625], [class1]],
+    [[0.375, 0.375], [class1]],
 ];
 
 var neat;
@@ -37,7 +45,7 @@ function setup() {
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
         populationSize: 100,
-        biasNode: true,
+        biasNode: false,
         drawFrames: 40
     });
     console.log(neat);
@@ -94,13 +102,6 @@ var nextStep = false;
 var trainingDataIndex = 0;
 var trainingDataFloatTime = 2;
 var trainingDataFloat = trainingDataFloatTime;
-
-
-let last = 0;
-let settled = 0;
-
-let framesGood = 0;
-let iterations = 0;
 function draw() {
     trainingDataFloat -= deltaTime * 0.001
     if (trainingDataFloat <= 0) {
@@ -167,6 +168,14 @@ function draw() {
 
     //console.log(err);
 
+
+
+
+
+
+
+
+
     let m = 3;
     textAlign(CENTER);
     if (true) {
@@ -214,27 +223,8 @@ function draw() {
         text(weights[i], left / 2, 900 + (i * 20));
     }
 
-
     drawTrainingData(0, 600, left, 250, p);
     textAlign(LEFT);
-
-    if (err != undefined && err < 0.0005) {
-        framesGood++;
-    } else {
-        framesGood = 0;
-    }
-    if (last != undefined && last == move) {
-        settled++;
-    } else {
-        settled = 0;
-        last = move;
-    }
-    if (framesGood > 60 && settled > 60) {
-        //setup();
-        framesGood = 0;
-        settled = 0;
-        //iterations = 0;
-    }
 }
 
 function drawFunction(f, dx, dy, dw, dh, m) {
@@ -306,9 +296,6 @@ function keyPressed() {
     console.log(keyCode);
     if (keyCode === 32) {
         setup();
-        iterations = 0;
-    } else if (keyCode == 67) {
-
     }
 }
 
