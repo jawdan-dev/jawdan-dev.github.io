@@ -37,6 +37,7 @@ function setup() {
     //p.splitConnection(2);
     //p.addConnection(1, 4);
     //p.addConnection(2, 3);
+
     //p.addConnection(1, 3);
 
 
@@ -135,6 +136,10 @@ function draw() {
     neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
     neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
 
+    fill(255);
+    noStroke();
+    text(String(neat.minFitness), 50, 50);
+    text(String(neat.maxFitness), 50, 70);
 
     //p.evolve(inputs, outputs, 500, 0.001);
     neat.runEpoch(inputs, outputs, 1000, 1e-5);

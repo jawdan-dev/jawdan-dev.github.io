@@ -86,9 +86,6 @@ class NEAT {
                     this.population[i].addConnection(j, k + this.inputNodeCount);
                 }
             }
-            this.population[i].connections.forEach(c => {
-                c.enabled = false
-            });
         }
     }
 
@@ -205,7 +202,7 @@ class NEAT {
                 const from = g[g1i].from;
                 const to = g[g1i].to;
 
-                child.addConnection(
+                child.addLooseConnection(
                     from, to,
                     getChance(0.5) ? gene1.weight : gene2.weight,
                     gene1.enabled != gene2.enabled ? !getChance(0.75) : true
@@ -214,12 +211,12 @@ class NEAT {
                 g2Index++;
             } else if (g1i < g2i) {
                 if (!equalFitness || getChance(0.5)) {
-                    child.addConnection(g[g1i].from, g[g1i].to, gene1.weight, gene1.enabled);
+                    child.addLooseConnection(g[g1i].from, g[g1i].to, gene1.weight, gene1.enabled);
                 }
                 g1Index++;
             } else {
                 if (equalFitness && getChance(0.5)) {
-                    child.addConnection(g[g2i].from, g[g2i].to, gene2.weight, gene2.enabled);
+                    child.addLooseConnection(g[g2i].from, g[g2i].to, gene2.weight, gene2.enabled);
                 }
                 g2Index++;
             }
@@ -237,7 +234,7 @@ class NEAT {
 
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
         if (this.stopped != undefined) {
-            //return;
+            return;
         }
 
         const iterations = Math.ceil(maxIterations / this.drawFrames);
@@ -250,7 +247,7 @@ class NEAT {
         }
         if (stopped) {
             this.stopped = true;
-            //return;
+            return;
         }
 
         this.currentDrawFrame++;
@@ -262,23 +259,26 @@ class NEAT {
 
         const newPopulation = [];
         // Attain fitness
-        let minFitness = undefined, maxFitness = undefined;
+        if (this.minFitness == undefined) this.minFitness = 0;
+        if (this.maxFitness == undefined) this.maxFitness = 0;
+
         for (let i = 0; i < this.population.length; i++) {
             const p = this.population[i];
 
             p.calculateFitness(inputs, targetOutputs);
 
-            minFitness = minFitness == undefined ? p.fitness : Math.min(minFitness, p.fitness);
-            maxFitness = maxFitness == undefined ? p.fitness : Math.max(maxFitness, p.fitness);
+            this.minFitness = Math.min(this.minFitness, p.fitness - 1);
+            this.maxFitness = Math.max(this.maxFitness, p.fitness + 1);
         };
-        minFitness -= 1;
 
         let totalFitness = 0;
 
         // Normalize Fitnesss (to be positive, without affecting results)
         this.population.forEach(p => {
-            p.fitness = mapRange(p.fitness, minFitness, maxFitness, 0, 1);
-            totalFitness += p.fitness;
+            totalFitness += p.fitness - this.minFitness;
+        });
+        this.population.forEach(p => {
+            p.fitness = (p.fitness - this.minFitness) / totalFitness;
         });
 
         const getFromGeneration = () => {
@@ -299,7 +299,7 @@ class NEAT {
             const g1 = getFromGeneration();
             const g2 = getFromGeneration();
 
-            const g = g1;// this.crossover(g1, g2);
+            const g = this.crossover(g1, g2);
 
             // Mutate
             g.mutate(inputs, targetOutputs);
@@ -788,7 +788,7 @@ NEAT.Genome = class {
 
         // Scores
         const errorScore = -Math.sqrt(totalError);  // Fitness will be in negative space.
-        const connectionScore = Math.log(Math.pow(totalConnections + 1, 0.25)) + 1;
+        const connectionScore = 1;//Math.log(Math.pow((totalConnections * 0.1) + 1, 1)) + 1;
 
         this.fitness = errorScore * connectionScore;
     }
@@ -917,6 +917,71 @@ NEAT.Genome = class {
         this.addConnection(splitNode, to, 1);
         if (this.neatInstance.biasNode) {
             this.addConnection(0, splitNode);
+        }
+    }
+
+    checkForRecursion() {
+        let nodes = [];
+        for (let i = 0; i < this.neatInstance.nodeCount; i++) {
+            nodes[i] = {
+                calculated: i < this.neatInstance.inputNodeCount,
+                failedReferences: 0
+            }
+        }
+
+        let unusedConnections = [];
+        for (let i = 0; i < this.connections.length; i++) {
+            if (this.connections[i].enabled) {
+                unusedConnections[unusedConnections.length] = i;
+            }
+        }
+
+        let lastLength = unusedConnections.length + 1;
+        while (unusedConnections.length > 0 && unusedConnections.length != lastLength) {
+            lastLength = unusedConnections.length;
+
+            for (let i = this.neatInstance.inputNodeCount; i < nodes.length; i++) {
+                nodes[i].failedReferences = 0;
+            }
+
+            let tempUnused = [];
+            for (let i = 0; i < unusedConnections.length; i++) {
+                let c = this.connections[unusedConnections[i]];
+                let g = this.neatInstance.globalConnections[c.index];
+
+                if (c.enabled) {
+                    if (!nodes[g.from].calculated) {
+                        tempUnused[tempUnused.length] = unusedConnections[i];
+                        nodes[g.to].failedReferences++;
+                    } else if (!nodes[g.to].calculated) {
+                        if (nodes[g.to].value == undefined) nodes[g.to].value = 0;
+                    }
+                }
+            }
+
+            for (let i = this.neatInstance.inputNodeCount; i < nodes.length; i++) {
+                if (nodes[i].calculated == false && nodes[i].value != undefined && nodes[i].failedReferences <= 0) {
+                    nodes[i].calculated = true;
+                }
+            }
+            unusedConnections = tempUnused;
+        }
+
+        return unusedConnections.length > 0;
+    }
+
+    addLooseConnection(from, to, weight, enabled) {
+        this.addConnection(from, to, weight, enabled);
+        if (this.checkForRecursion()) {
+            this.connections.splice(this.connections.length - 1, 1);
+
+            if (from >= this.neatInstance.inputNodeCount) {
+
+                this.addConnection(to, from, weight, enabled);
+                if (this.checkForRecursion()) {
+                    this.connections.splice(this.connections.length - 1, 1);
+                }
+            }
         }
     }
 
