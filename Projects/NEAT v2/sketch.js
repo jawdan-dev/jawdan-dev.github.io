@@ -156,7 +156,7 @@ function draw() {
     text(String(neat.maxFitness), 50, 70);
 
     //p.evolve(inputs, outputs, 500, 0.001);
-    neat.runEpoch(inputs, outputs, 1000, 1e-5);
+    neat.runEpoch(inputs, outputs, 1000, 5e-4);
 
     //const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
 
