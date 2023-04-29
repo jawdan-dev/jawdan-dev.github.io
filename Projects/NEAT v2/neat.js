@@ -236,7 +236,7 @@ class NEAT {
     }
 
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
-        if (this.stopped != undefined) {
+        if (this.stopped != undefined || this.stopped == true) {
             return;
         }
 
