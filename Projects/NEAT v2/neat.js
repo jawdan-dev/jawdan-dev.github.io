@@ -994,7 +994,7 @@ NEAT.Genome = class {
         // edges huh
 
         if (!this.drawVertices || !this.drawEdges) {
-            console.log("making everything :)");
+            //console.log("making everything :)");
 
             this.drawVertices = []
             this.drawEdges = [];
