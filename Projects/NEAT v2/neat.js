@@ -58,7 +58,7 @@ const setFillColor = value => {
 
 const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 1.2e-2;
+const NEATlearningRate = 2.3e-2;
 
 class NEAT {
     constructor(config) {
@@ -313,19 +313,51 @@ class NEAT {
         const iterations = Math.ceil(maxIterations / this.drawFrames);
 
         // Train
-        let stopped = false;
+        let stopped = 0;
+        let good = [];
         for (let i = 0; i < this.population.length; i++) {
             const e = this.population[i];
             const {
                 stopped: backStopped,
                 iterations: it
             } = e.backPropagate(inputs, targetOutputs, iterations, stopError);
-            stopped ||= backStopped;
+
+            if (backStopped) {
+                stopped++;
+                good[good.length] = i;
+            }
         }
-        if (stopped) {
-            console.log("stopped");
-            this.stopped = true;
-            return;
+        if (stopped > 0.1 * this.population.length && good.length > 0) {
+            let minTotalConnections = this.population[good[0]].getTotalConnections();
+            for (let i = 1; i < good.length; i++) {
+                minTotalConnections = Math.min(minTotalConnections, this.population[good[i]].getTotalConnections());
+            }
+
+            for (let i = 0; i < good.length; i++) {
+                if (this.population[good[i]].getTotalConnections() > minTotalConnections) {
+                    good.splice(i--, 1);
+                }
+            }
+
+            console.log(good);
+
+            if (good.length > 0) {
+                good.sort((a, b) => {
+                    return this.population[b].fitness - this.population[a].fitness;
+                });
+
+                console.log(good);
+
+                if (good[0] != 0) {
+                    const temp = this.population[0];
+                    this.population[0] = this.population[good[0]];
+                    this.population[good[0]] = temp;
+                }
+
+                console.log("stopped");
+                this.stopped = true;
+                return;
+            }
         }
 
         // Dont go to next generation if backpropagation not finished
@@ -880,6 +912,14 @@ NEAT.Genome = class {
         }
     }
 
+    getTotalConnections() {
+        let totalConnections = 0;
+        this.connections.forEach(c => {
+            if (c.enabled) { totalConnections++; }
+        });
+        return totalConnections;
+    }
+
     calculateFitness(inputs, targetOutputs) {
         // Root Mean Squared Error
         let totalError = 0;
@@ -893,10 +933,7 @@ NEAT.Genome = class {
         }
         totalError /= Math.min(inputs.length, targetOutputs.length);
 
-        let totalConnections = 0;
-        this.connections.forEach(c => {
-            if (c.enabled) { totalConnections++; }
-        });
+        const totalConnections = this.getTotalConnections();
 
         // Scores
         const errorScore = -Math.sqrt(totalError);  // Fitness will be in negative space.

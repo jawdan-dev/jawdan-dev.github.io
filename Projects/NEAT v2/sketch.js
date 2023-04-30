@@ -23,14 +23,43 @@ const trainingSetApproximationXOR = [
     [[0.25, 0.75], class1],
     [[0.75, 0.25], class1],
     [[0.75, 0.75], class2],
+];
+const trainingSetApproximationXORMOD = [
+    [[0.25, 0.25], class2],
+    [[0.25, 0.75], class1],
+    [[0.75, 0.25], class1],
+    [[0.75, 0.75], class2],
+
+    [[0.375, 0.375], class1],
+    [[0.625, 0.625], class1],
+    [[0.5, 0.5], class2],
+];
+const trainingSetApproximationRING = [
+    [[0.25, 0.25], class2],
+    [[0.25, 0.75], class2],
+    [[0.75, 0.25], class2],
+    [[0.75, 0.75], class2],
+
+    [[0.15, 0.5], class2],
+    [[0.5, 0.15], class2],
+    [[0.85, 0.5], class2],
+    [[0.5, 0.85], class2],
 
     [[0.5, 0.5], class2],
+
     [[0.625, 0.625], class1],
     [[0.375, 0.375], class1],
+    [[0.375, 0.625], class1],
+    [[0.625, 0.375], class1],
+
+    [[0.3, 0.5], class1],
+    [[0.7, 0.5], class1],
+    [[0.5, 0.3], class1],
+    [[0.5, 0.7], class1],
 ];
 
 
-let trainingData = trainingSetApproximationXOR;
+let trainingData = trainingSetApproximationXORMOD;
 
 var neat;
 
@@ -49,7 +78,7 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 200,
+        populationSize: 100,
         biasNode: true,
         drawFrames: 60
     });
@@ -61,8 +90,7 @@ function setup() {
 var nextStep = false;
 
 let blocksPerFrame = 1000;
-let blockIndex = 0;
-let blocks = [];
+let blockIndex = [];
 const deltaTarget = 1000 / 20;
 
 function draw() {
@@ -97,10 +125,19 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1000, 5e-4);
+    neat.runEpoch(inputs, outputs, 3000, 5e-4);
     p.calculateFitness(inputs, outputs);
-    drawFunctionGraph(left + hw, 0, hw, hh, p, 0);
 
+    const minSize = Math.min(hw, hh);
+    const graphOx = minSize == hw ? 0 : ((hw - minSize) / 2);
+    const graphOy = minSize == hh ? 0 : ((hh - minSize) / 2);
+
+    drawFunctionGraph(left + hw + graphOx, graphOy, minSize, minSize, p);
+
+    //if (neat.lastSpecies != undefined && neat.lastSpecies.length > 2) {
+    //    drawFunctionGraph(left, hh, hw, hh, neat.lastSpecies[1].rep, 1);
+    //    drawFunctionGraph(left + hw, hh, hw, hh, neat.lastSpecies[2].rep, 2);
+    //}
 
 
 
@@ -254,8 +291,8 @@ function getLerpColor(r1, g1, b1, r2, g2, b2, t) {
     );
 }
 
-let graphTexture;
-function drawFunctionGraph(bx, by, bw, bh, p) {
+let graphTexture = [];
+function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
     strokeWeight(1);
     noStroke();
 
@@ -266,15 +303,18 @@ function drawFunctionGraph(bx, by, bw, bh, p) {
     const cut = 80;
     const scale = 3;
 
-    if (graphTexture == undefined || graphTexture.width != cut * scale || graphTexture.height != cut * scale) {
-        graphTexture = createImage(cut * scale, cut * scale);
-        graphTexture.loadPixels();
+    if (graphTexture[imageVal] == undefined || graphTexture[imageVal].width != cut * scale || graphTexture[imageVal].height != cut * scale) {
+        graphTexture[imageVal] = createImage(cut * scale, cut * scale);
+        graphTexture[imageVal].loadPixels();
+    }
+    if (blockIndex[imageVal] == undefined) {
+        blockIndex[imageVal] = 0;
     }
 
     const increment = totalRange / cut;
 
-    const start = blockIndex;
-    const end = (blockIndex + blocksPerFrame) % (cut * cut);
+    const start = blockIndex[imageVal];
+    const end = (blockIndex[imageVal] + blocksPerFrame) % (cut * cut);
 
     let c = color(255, 0, 255);
     for (let y = 0; y < cut; y++) {
@@ -309,15 +349,15 @@ function drawFunctionGraph(bx, by, bw, bh, p) {
             const dy = ((cut - 1) - y) * scale;
             for (let i = 0; i < scale; i++) {
                 for (let j = 0; j < scale; j++) {
-                    graphTexture.set(dx + i, dy + j, c)
+                    graphTexture[imageVal].set(dx + i, dy + j, c)
                 }
             }
         }
     }
 
-    graphTexture.updatePixels();
-    image(graphTexture, bx, by, bw, bh);
-    blockIndex = end;
+    graphTexture[imageVal].updatePixels();
+    image(graphTexture[imageVal], bx, by, bw, bh);
+    blockIndex[imageVal] = end;
 
     stroke(255);
     noFill();
