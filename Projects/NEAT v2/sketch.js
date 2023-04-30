@@ -49,9 +49,9 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 100,
+        populationSize: 200,
         biasNode: true,
-        drawFrames: 50
+        drawFrames: 60
     });
     console.log(neat);
 
@@ -97,7 +97,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1200, 5e-4);
+    neat.runEpoch(inputs, outputs, 1000, 5e-4);
     p.calculateFitness(inputs, outputs);
     drawFunctionGraph(left + hw, 0, hw, hh, p, 0);
 
@@ -114,6 +114,7 @@ function draw() {
         textHeight += textSpacing;
     }
 
+    drawDebugText("GENERATION: " + String(neat.generation));
     drawDebugText("Population: " + String(neat.population.length));
     drawDebugText("RenderSpeed: " + String(blocksPerFrame));
     drawDebugText("Species Count: " + String(neat.lastSpecies != undefined ? neat.lastSpecies.length : 1));

@@ -58,7 +58,7 @@ const setFillColor = value => {
 
 const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 2e-2;
+const NEATlearningRate = 1.2e-2;
 
 class NEAT {
     constructor(config) {
@@ -95,6 +95,7 @@ class NEAT {
                 //c.enabled = false; // this is shown to create thiccccc neural networks
             })
         }
+        this.generation = 0;
     }
 
     getConnection(from, to) {
@@ -174,7 +175,7 @@ class NEAT {
         const cutoff = 20;
 
         let n = Math.max(g1.connections.length, g2.connections.length);
-        if (n < cutoff) { 
+        if (n < cutoff) {
             n = lerp(1, n, n / cutoff);
         } // hmmmmmm
 
@@ -242,31 +243,64 @@ class NEAT {
     getSpecies() {
         const species = [];
 
+        if (this.lastSpecies != undefined) {
+            for (let i = 0; i < this.lastSpecies.length; i++) {
+                const s = this.lastSpecies[i];
+                species[i] = {
+                    rep: s.rep,
+                    genome: [],
+                    totalFitness: undefined
+                };
+            }
+        }
+
+
         const pool = [];
         for (let i = 0; i < this.population.length; i++) {
             pool[i] = i;
         }
 
         while (pool.length > 0) {
-            let big = pool.splice(getRandomInt(pool.length), 1)[0];
+            let big = pool.splice(0, 1)[0];
+            const rep = this.population[big].clone();
 
-            const genome = [big];
-
-            for (let i = 0; i < pool.length; i++) {
-                if (NEAT.distance(this.population[big], this.population[pool[i]]) <= NEATspeciesThreshold) {
-                    genome[genome.length] = pool.splice(i--, 1)[0];
+            let closestSpeciesScore = undefined;
+            let closestSpecies = -1;
+            for (let i = 0; i < species.length; i++) {
+                const score = NEAT.distance(rep, species[i].rep);
+                if (score <= NEATspeciesThreshold && (closestSpeciesScore == undefined || score < closestSpeciesScore)) {
+                    closestSpeciesScore = score;
+                    closestSpecies = i;
                 }
             }
 
-            species[species.length] = {
-                genome: genome,
-                totalFitness: undefined
-            };
+            if (closestSpecies != -1) {
+                species[closestSpecies].genome[species[closestSpecies].genome.length] = big;
+            } else {
+                species[species.length] = {
+                    rep: rep,
+                    genome: [big],
+                    totalFitness: undefined,
+                };
+            }
         }
 
         species.sort((a, b) => {
-            return b.length - a.length;
+            return b.genome.length - a.genome.length;
         });
+        for (let i = species.length - 1; i >= 0; i--) {
+            if (species[i].genome.length == 0) {
+                species.splice(i, 1);
+            } else {
+                break;
+            }
+        }
+        // delete after 15 gens of no increase?
+
+        species.forEach(s => {
+            s.rep = this.population[s.genome[getRandomInt(s.genome.length)]].clone();
+        });
+        this.lastSpecies = species;
 
         return species;
     }
@@ -325,7 +359,6 @@ class NEAT {
         });
 
         const species = this.getSpecies();
-        this.lastSpecies = species;
         //console.log("Species Count:", species.length, species);
         const getFromSpecies = (s) => {
             const position = random() * s.totalFitness;
@@ -384,6 +417,7 @@ class NEAT {
         this.population.sort((a, b) => {
             return b.fitness - a.fitness;
         });
+        this.generation++;
     }
 }
 
