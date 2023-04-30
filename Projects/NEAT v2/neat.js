@@ -56,7 +56,7 @@ const setFillColor = value => {
 }
 
 
-const NEATspeciesThreshold = 2.5;
+const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
 const NEATlearningRate = 2e-2;
 
@@ -171,8 +171,12 @@ class NEAT {
         excess = g1.connections.length - g1Index;
         weightDifference /= similar; // avg weight difference
 
+        const cutoff = 20;
+
         let n = Math.max(g1.connections.length, g2.connections.length);
-        if (n < 20) { n = 1; } // hmmmmmm
+        if (n < cutoff) { 
+            n = lerp(1, n, n / cutoff);
+        } // hmmmmmm
 
         disjoint /= n;
         excess /= n;

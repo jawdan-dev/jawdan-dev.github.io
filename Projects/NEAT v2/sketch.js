@@ -97,7 +97,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1200, 5e-3);
+    neat.runEpoch(inputs, outputs, 1200, 5e-4);
     p.calculateFitness(inputs, outputs);
     drawFunctionGraph(left + hw, 0, hw, hh, p, 0);
 
