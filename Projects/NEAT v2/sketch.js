@@ -125,7 +125,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 3000, 5e-4);
+    neat.runEpoch(inputs, outputs, 1000, 5e-4);
     p.calculateFitness(inputs, outputs);
 
     const minSize = Math.min(hw, hh);
