@@ -8,25 +8,25 @@ const trainingSetXOR = [
     [[tf, tt], [tt]],
 ];
 
-const class1 = 1;
-const class2 = -1;
+const class1 = [1];
+const class2 = [-1];
 const trainingSetApproximation = [
-    [[0.1, 0.75], [class2]],
-    [[0.4, 0.6], [class2]],
-    [[0.75, 0.6], [class1]],
-    [[0.15, 0.25], [class1]],
-    [[0.2, 0.4], [class2]],
-    [[0.6, 0.35], [class1]],
+    [[0.1, 0.75], class2],
+    [[0.4, 0.6], class2],
+    [[0.75, 0.6], class1],
+    [[0.15, 0.25], class1],
+    [[0.2, 0.4], class2],
+    [[0.6, 0.35], class1],
 ];
 const trainingSetApproximationXOR = [
-    [[0.25, 0.25], [class2]],
-    [[0.25, 0.75], [class1]],
-    [[0.75, 0.25], [class1]],
-    [[0.75, 0.75], [class2]],
+    [[0.25, 0.25], class2],
+    [[0.25, 0.75], class1],
+    [[0.75, 0.25], class1],
+    [[0.75, 0.75], class2],
 
-    [[0.5, 0.5], [class2]],
-    [[0.625, 0.625], [class1]],
-    [[0.375, 0.375], [class1]],
+    [[0.5, 0.5], class2],
+    [[0.625, 0.625], class1],
+    [[0.375, 0.375], class1],
 ];
 
 
@@ -260,7 +260,7 @@ function drawFunctionGraph(bx, by, bw, bh, p) {
     noStroke();
 
     const minRange = 0;
-    const maxRange = 1;
+    const maxRange = 1 - minRange;
     const totalRange = maxRange - minRange;
 
     const cut = 80;
