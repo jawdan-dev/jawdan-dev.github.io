@@ -1,7 +1,7 @@
 const tt = 1;
 const tf = -1;
 
-const trainingData1 = [
+const trainingSetXOR = [
     [[tt, tt], [tf]],
     [[tf, tf], [tf]],
     [[tt, tf], [tt]],
@@ -10,13 +10,15 @@ const trainingData1 = [
 
 const class1 = 1;
 const class2 = -1;
-const trainingData = [
-    //[[0.1, 0.75], [class2]],
-    //[[0.4, 0.6], [class2]],
-    //[[0.75, 0.6], [class1]],
-    //[[0.15, 0.25], [class1]],
-    //[[0.2, 0.4], [class2]],
-    //[[0.6, 0.35], [class1]],
+const trainingSetApproximation = [
+    [[0.1, 0.75], [class2]],
+    [[0.4, 0.6], [class2]],
+    [[0.75, 0.6], [class1]],
+    [[0.15, 0.25], [class1]],
+    [[0.2, 0.4], [class2]],
+    [[0.6, 0.35], [class1]],
+];
+const trainingSetApproximationXOR = [
     [[0.25, 0.25], [class2]],
     [[0.25, 0.75], [class1]],
     [[0.75, 0.25], [class1]],
@@ -26,6 +28,9 @@ const trainingData = [
     [[0.625, 0.625], [class1]],
     [[0.375, 0.375], [class1]],
 ];
+
+
+let trainingData = trainingSetApproximationXOR;
 
 var neat;
 
@@ -45,69 +50,29 @@ function setup() {
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
         populationSize: 100,
-        biasNode: false,
-        drawFrames: 40
+        biasNode: true,
+        drawFrames: 50
     });
     console.log(neat);
-
-    /// so like is th okay i do wonter hwo mayn this is writing befcause oof
-    let p = neat.population[0];
-
-    //p.splitConnection(2);
-    //p.addConnection(1, 4);
-    //p.addConnection(2, 3);
-
-    //p.addConnection(1, 3);
-
-
-    //for (let i = neat.biasNode ? neat.outputNodeCount : 0; i < p.connections.length; i++) {
-    //    p.connections[i].enabled = false;
-    //}
-    //const extraNodeOffset = neat.inputNodeCount + neat.outputNodeCount;
-    //for (let i = 0; i < testval; i++) {
-    //    let ni = extraNodeOffset + i;
-    //    for (let j = 0; j < neat.inputNodeCount; j++) {
-    //        p.addConnection(j, ni);
-    //    }
-    //    for (let j = 0; j < neat.outputNodeCount; j++) {
-    //        p.addConnection(ni, neat.inputNodeCount + j);
-    //    }
-    //}
-    //p.connections[5].enabled = false;
-    //testval++;
-
-    if (false) {
-        p.addConnection(0, 17);
-        p.addConnection(17, 18);
-        p.addConnection(18, 3);
-        p.addConnection(18, 19);
-        p.addConnection(19, 20);
-        p.addConnection(20, 19);
-        p.addConnection(19, 3);
-
-
-        p.connections[3].enabled = false;
-    }
-    //console.log(p.getOutput(trainingData[0][0]));
-    //console.log(NEAT.distance(neat.population[0], neat.population[1]));
-    //console.log(NEAT.distance(neat.population[1], neat.population[2]));
-
-    //console.log(p.train([trainingData[0][0]], [trainingData[0][1]]));
 
     frameRate(30);
 }
 
 var nextStep = false;
 
-var trainingDataIndex = 0;
-var trainingDataFloatTime = 2;
-var trainingDataFloat = trainingDataFloatTime;
+let blocksPerFrame = 1000;
+let blockIndex = 0;
+let blocks = [];
+const deltaTarget = 1000 / 20;
+
 function draw() {
-    trainingDataFloat -= deltaTime * 0.001
-    if (trainingDataFloat <= 0) {
-        trainingDataFloat = trainingDataFloatTime;
-        trainingDataIndex = (trainingDataIndex + 1) % trainingData.length
+
+    if (deltaTime > deltaTarget) {
+        blocksPerFrame -= 50;
+    } else {
+        blocksPerFrame++;
     }
+    blocksPerFrame = Math.min(Math.max(blocksPerFrame, 100), 3000);
 
     background(11); //12
 
@@ -115,14 +80,10 @@ function draw() {
     fill(12);
     let s = Math.min(windowWidth, windowHeight);
 
-    let x = (windowWidth - s) / 2;
-    let y = (windowHeight - s) / 2;
-
     let left = 200;
 
     let hw = (windowWidth - left) / 2;
     let hh = windowHeight / 2;
-
 
 
     let inputs = [];
@@ -133,53 +94,38 @@ function draw() {
         outputs[outputs.length] = trainingData[i][1];
     }
 
-    neat.population.forEach(p => {
-        p.calculateFitness(inputs, outputs);
-    });
-    neat.population.sort((a, b) => {
-        return b.fitness - a.fitness;
-    })
-
     const p = neat.population[0];
 
-    //neat.population[0].draw(0, 0, windowWidth, windowHeight, trainingData[0][0]);
-    let move = p.draw(left, 0, hw, hh, trainingData[trainingDataIndex][0]);
-    neat.population[1].draw(left + hw, 0, hw, hh, trainingData[1][0]);
-    neat.population[2].draw(left, hh, hw, hh, trainingData[2][0]);
-    neat.population[3].draw(left + hw, hh, hw, hh, trainingData[3][0]);
+    p.draw(left, 0, hw, hh, trainingData[0][0]);
+    neat.runEpoch(inputs, outputs, 1200, 5e-3);
+    p.calculateFitness(inputs, outputs);
+    drawFunctionGraph(left + hw, 0, hw, hh, p, 0);
 
-    drawFunctionGraph(left + 100, 800, 400, 400, p);
+
+
 
     fill(255);
     noStroke();
-    text(String(neat.minFitness), 50, 50);
-    text(String(neat.maxFitness), 50, 70);
+    let textHeight = 20;
+    let textSpacing = 20;
 
-    //p.evolve(inputs, outputs, 500, 0.001);
-    neat.runEpoch(inputs, outputs, 1000, 5e-4);
+    const drawDebugText = t => {
+        text(t, 20, textHeight)
+        textHeight += textSpacing;
+    }
 
-    //const totalErrors = p.backPropagate(inputs, outputs, false, true).totalErrors;
-
-    //let totalErr = 0;
-    //for (let i = 0; i < totalErrors.length; i++) {
-    //    totalErr += Math.abs(totalErrors[i]);
-    //}
-    const err = undefined;//totalErr / totalErrors.length;
-
-    //console.log(err);
-
-
-
-
-
-
+    drawDebugText("Population: " + String(neat.population.length));
+    drawDebugText("RenderSpeed: " + String(blocksPerFrame));
+    drawDebugText("Species Count: " + String(neat.lastSpecies != undefined ? neat.lastSpecies.length : 1));
+    drawDebugText("Min Fitness: " + String(neat.minFitness));
+    drawDebugText("Max Fitness: " + String(neat.maxFitness));
 
 
 
     let m = 3;
     textAlign(CENTER);
     if (true) {
-        let gx = 0, gy = 300, gw = left, gh = left;
+        let gx = 0, gy = 150, gw = left, gh = left;
 
         noStroke();
         fill(255);
@@ -220,10 +166,10 @@ function draw() {
     })
     for (let i = 0; i < weights.length && i < 20; i++) {
         setFillColor(weights[i]);
-        text(weights[i], left / 2, 900 + (i * 20));
+        text(weights[i], left / 2, 850 + (i * 20));
     }
 
-    drawTrainingData(0, 600, left, 250, p);
+    drawTrainingData(0, 400, left, 400, p);
     textAlign(LEFT);
 }
 
@@ -299,45 +245,83 @@ function keyPressed() {
     }
 }
 
+function getLerpColor(r1, g1, b1, r2, g2, b2, t) {
+    return color(
+        lerp(r1, r2, t),
+        lerp(g1, g2, t),
+        lerp(b1, b2, t)
+    );
+}
+
+let graphTexture;
 function drawFunctionGraph(bx, by, bw, bh, p) {
-    stroke(255);
-    noFill();
     strokeWeight(1);
-    rect(bx, by, bw, bh);
     noStroke();
 
     const minRange = 0;
     const maxRange = 1;
     const totalRange = maxRange - minRange;
 
-    const cut = 100;
+    const cut = 80;
+    const scale = 3;
+
+    if (graphTexture == undefined || graphTexture.width != cut * scale || graphTexture.height != cut * scale) {
+        graphTexture = createImage(cut * scale, cut * scale);
+        graphTexture.loadPixels();
+    }
+
     const increment = totalRange / cut;
 
-    const boxW = bw / cut + 1;
-    const boxH = bh / cut + 1;
+    const start = blockIndex;
+    const end = (blockIndex + blocksPerFrame) % (cut * cut);
 
-    for (let x = 0; x <= totalRange; x += increment) {
-        for (let y = 0; y <= totalRange; y += increment) {
-            let dx = ((x / totalRange)) * bw;
-            let dy = (1 - (y / totalRange)) * bh;
+    let c = color(255, 0, 255);
+    for (let y = 0; y < cut; y++) {
+        for (let x = 0; x < cut; x++) {
+            let blockIndexValue = x + (y * cut);
 
-            let ax = x + minRange;
-            let ay = y + minRange;
-            let value = p.getOutput([ax, ay])[0];
+            const ix = x * increment;
+            const iy = y * increment;
 
-            if (value > 0) {
-                value = min(value, 2);
-                fill(0, 150 * value, 255 * value);
-            } else {
-                value = min(-value, 2);
-                fill(255 * value, 150 * value, 0);
+            let ax = ix + minRange;
+            let ay = iy + minRange;
+
+            if (!((start < end && blockIndexValue >= start && blockIndexValue < end) || (start >= end && (blockIndexValue >= start || blockIndexValue < end)))) {
+                continue;
             }
 
-            let bwo = Math.min(boxW + bx + dx, bx + bw) - (bx + dx);
-            let bho = Math.min(boxH + by + dy, by + bh) - (by + dy);
-            rect(bx + dx, by + dy, bwo, bho);
+            let value = p.getOutput([ax, ay])[0];
+
+            if (value != undefined) {
+                const sign = value >= 0;
+                value = Math.abs(value);
+                value = value < 1 ? (1 - value) : Math.min(value - 1, 1);
+
+                if (sign) {
+                    c = getLerpColor(0, 150, 255, 0, 0, 0, value);
+                } else {
+                    c = getLerpColor(255, 150, 0, 0, 0, 0, value);
+                }
+            }
+
+            const dx = x * scale;
+            const dy = ((cut - 1) - y) * scale;
+            for (let i = 0; i < scale; i++) {
+                for (let j = 0; j < scale; j++) {
+                    graphTexture.set(dx + i, dy + j, c)
+                }
+            }
         }
     }
+
+    graphTexture.updatePixels();
+    image(graphTexture, bx, by, bw, bh);
+    blockIndex = end;
+
+    stroke(255);
+    noFill();
+    rect(bx, by, bw, bh);
+
 
     stroke(255);
     for (let i = 0; i < trainingData.length; i++) {
