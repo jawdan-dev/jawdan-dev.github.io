@@ -70,7 +70,7 @@ function setup() {
         doCreateCanvas = false;
     }
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 50; i++) {
         let x = random();
         let y = random();
 
@@ -83,9 +83,9 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 100,
+        populationSize: 50,
         biasNode: true,
-        drawFrames: 120
+        drawFrames: 150
     });
     console.log(neat);
 
@@ -131,7 +131,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 3000, 5e-3);
+    neat.runEpoch(inputs, outputs, 1000, 5e-3);
     p.calculateFitness(inputs, outputs);
 
     const minSize = Math.min(hw, hh);
@@ -197,7 +197,7 @@ function draw() {
 
     noStroke();
     fill(255);
-    text("Training Table:", left / 2, 550);
+    text("Training Table:", left / 2, 400-30);
 
     let weights = [];
     for (let i = 0; i < p.connections.length; i++) {
@@ -213,7 +213,7 @@ function draw() {
         text(weights[i], left / 2, 850 + (i * 20));
     }
 
-    //drawTrainingData(0, 400, left, 400, p);
+    drawTrainingData(0, 400, left, 400, p);
     textAlign(LEFT);
 }
 
@@ -306,6 +306,8 @@ function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
     const maxRange = 1 - minRange;
     const totalRange = maxRange - minRange;
 
+    const clampTop = true;
+
     const cut = 80;
     const scale = 3;
 
@@ -342,7 +344,7 @@ function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
             if (value != undefined) {
                 const sign = value >= 0;
                 value = Math.abs(value);
-                value = value < 1 ? (1 - value) : Math.min(value - 1, 1);
+                value = value < 1 ? (1 - value) : (clampTop ? 0 : Math.min(value - 1, 1));
 
                 if (sign) {
                     c = getLerpColor(0, 150, 255, 0, 0, 0, value);

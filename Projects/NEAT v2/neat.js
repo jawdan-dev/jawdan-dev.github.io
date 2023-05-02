@@ -58,7 +58,7 @@ const setFillColor = value => {
 
 const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 2.3e-2;
+const NEATlearningRate = 2.3e-3 * 4;
 
 class NEAT {
     constructor(config) {
@@ -704,6 +704,45 @@ NEAT.Genome = class {
         return possibleConnections;
     }
 
+
+    getErrors(calculatedNodes, targetOutput) {
+        const errors = [];
+
+        const nodeInputMaxIndex = this.neatInstance.inputNodeCount;
+        const nodeOutputMaxIndex = nodeInputMaxIndex + this.neatInstance.outputNodeCount;
+
+        let op, t, i;
+        for (let n = nodeInputMaxIndex; n < nodeOutputMaxIndex; n++) {
+            i = n - nodeInputMaxIndex;
+            op = (calculatedNodes[n].calculated ? calculatedNodes[n].value : 0);
+            t = targetOutput[i];
+            errors[i] = op - t;
+
+            if (Math.sign(op) == Math.sign(t) && Math.abs(op) > Math.abs(t)) {
+                errors[i] = 0;
+            }
+        }
+        return errors;
+    }
+
+    getTotalError(inputs, targetOutputs) {
+        let totalError = 0;
+        let errorCount = 0;
+
+        for (let n = 0; n < inputs.length && n < targetOutputs.length; n++) {
+            const calculatedNodes = this.getCalculatedNodes(inputs[n]);
+            const errors = this.getErrors(calculatedNodes, targetOutputs[n]);
+
+            errors.forEach(e => {
+                totalError += Math.pow(e, 2);
+                errorCount++;
+            });
+        }
+        totalError /= errorCount;
+
+        return Math.sqrt(totalError);
+    }
+
     getGradientNodes(calculatedNodes, targetOutput) {
         // constants
         const nodeInputMaxIndex = this.neatInstance.inputNodeCount;
@@ -711,10 +750,7 @@ NEAT.Genome = class {
         const df = this.activationFunctionDerivitive;
 
         // Derived Errors.
-        const errors = [];
-        for (let i = nodeInputMaxIndex; i < nodeOutputMaxIndex; i++) {
-            errors[i - nodeInputMaxIndex] = (calculatedNodes[i].calculated ? calculatedNodes[i].value : 0) - targetOutput[i - nodeInputMaxIndex];
-        }
+        const errors = this.getErrors(calculatedNodes, targetOutput);
         // Gradients (for feeding purposes).
         const nodeZs = [];
         for (let i = 0; i < this.neatInstance.nodeCount && i < calculatedNodes.length; i++) {
@@ -849,7 +885,7 @@ NEAT.Genome = class {
         }
     }
 
-    backPropagate(inputs, targetOutputs, iterations, stopError) {
+    backPropagate(inputs, targetOutputs, iterations, stopError = 1e-4, weightStop = 1e-8) {
         /*
                 if (draw) {
                     noStroke();
@@ -887,17 +923,21 @@ NEAT.Genome = class {
 
         let minError = stopError + 1;
         let lastTotalError = 0;
+        let lastTotalWeightChange = weightStop;
 
         let iterationsDone;
-        for (iterationsDone = 0; iterationsDone < iterations && minError >= stopError; iterationsDone++) {
+        for (iterationsDone = 0; iterationsDone < iterations && minError >= stopError && lastTotalWeightChange >= weightStop; iterationsDone++) {
             const {
                 weightChange,
                 totalErrors
             } = this.getWeightChange(inputs, targetOutputs);
 
+            lastTotalWeightChange = 0;
             for (let i = 0; i < this.connections.length && i < weightChange.length; i++) {
                 this.connections[i].weight += -NEATlearningRate * weightChange[i];
+                lastTotalWeightChange += Math.abs(weightChange[i]);
             }
+            //lastTotalWeightChange /= weightChange.length;
 
             lastTotalError = 0;
             for (let i = 0; i < totalErrors.length; i++) {
@@ -922,21 +962,11 @@ NEAT.Genome = class {
 
     calculateFitness(inputs, targetOutputs) {
         // Root Mean Squared Error
-        let totalError = 0;
-        for (let n = 0; n < inputs.length && n < targetOutputs.length; n++) {
-            const output = this.getOutput(inputs[n]);
-
-
-            for (let i = 0; i < output.length && i < targetOutputs[n].length; i++) {
-                totalError += Math.pow(targetOutputs[n][i] - output[i], 2);
-            }
-        }
-        totalError /= Math.min(inputs.length, targetOutputs.length);
-
+        const totalError = this.getTotalError(inputs, targetOutputs);
         const totalConnections = this.getTotalConnections();
 
         // Scores
-        const errorScore = -Math.sqrt(totalError);  // Fitness will be in negative space.
+        const errorScore = -totalError;  // Fitness will be in negative space.
         const connectionScore = 1;//Math.log(Math.pow((totalConnections * 0.1) + 1, 1)) + 1;
 
         this.fitness = errorScore * connectionScore;
