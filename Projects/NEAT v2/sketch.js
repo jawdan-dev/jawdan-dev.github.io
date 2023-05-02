@@ -85,7 +85,7 @@ function setup() {
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
-        populationSize: 50,
+        populationSize: 100,
         biasNode: true,
         drawFrames: 150
     });
