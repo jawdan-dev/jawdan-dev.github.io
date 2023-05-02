@@ -718,9 +718,11 @@ NEAT.Genome = class {
             t = targetOutput[i];
             errors[i] = op - t;
 
-            //if (Math.sign(op) == Math.sign(t) && Math.abs(op) > Math.abs(t)) {
-            //    errors[i] = 0;
-            //}
+            if (clampTop) {
+                if (Math.sign(op) == Math.sign(t) && Math.abs(op) > Math.abs(t)) {
+                    errors[i] = 0;
+                }
+            }
         }
         return errors;
     }

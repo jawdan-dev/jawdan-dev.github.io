@@ -55,6 +55,7 @@ const trainingSetApproximationRING = [
 
 
 let trainingData = trainingSetApproximationXOR;
+let clampTop = false;
 
 var neat;
 
@@ -306,8 +307,6 @@ function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
     const minRange = -0.05;
     const maxRange = 1 - minRange;
     const totalRange = maxRange - minRange;
-
-    const clampTop = true;
 
     const cut = 80;
     const scale = 3;
