@@ -58,7 +58,7 @@ const setFillColor = value => {
 
 const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 2.3e-3 * 4;
+const NEATlearningRate = 1e-2;
 
 class NEAT {
     constructor(config) {
@@ -718,9 +718,9 @@ NEAT.Genome = class {
             t = targetOutput[i];
             errors[i] = op - t;
 
-            if (Math.sign(op) == Math.sign(t) && Math.abs(op) > Math.abs(t)) {
-                errors[i] = 0;
-            }
+            //if (Math.sign(op) == Math.sign(t) && Math.abs(op) > Math.abs(t)) {
+            //    errors[i] = 0;
+            //}
         }
         return errors;
     }

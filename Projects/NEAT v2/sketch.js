@@ -70,7 +70,8 @@ function setup() {
         doCreateCanvas = false;
     }
 
-    for (let i = 0; i < 50; i++) {
+    trainingSetApproximationXOR.splice(0, trainingSetApproximationXOR.length);
+    for (let i = 0; i < 200; i++) {
         let x = random();
         let y = random();
 
@@ -131,7 +132,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1000, 5e-3);
+    neat.runEpoch(inputs, outputs, 1400, 5e-3);
     p.calculateFitness(inputs, outputs);
 
     const minSize = Math.min(hw, hh);
@@ -197,7 +198,7 @@ function draw() {
 
     noStroke();
     fill(255);
-    text("Training Table:", left / 2, 400-30);
+    text("Training Table:", left / 2, 400 - 30);
 
     let weights = [];
     for (let i = 0; i < p.connections.length; i++) {
