@@ -18,12 +18,7 @@ const trainingSetApproximation = [
     [[0.2, 0.4], class2],
     [[0.6, 0.35], class1],
 ];
-const trainingSetApproximationXOR = [
-    [[0.25, 0.25], class2],
-    [[0.25, 0.75], class1],
-    [[0.75, 0.25], class1],
-    [[0.75, 0.75], class2],
-];
+const trainingSetApproximationXOR = [];
 const trainingSetApproximationXORMOD = [
     [[0.25, 0.25], class2],
     [[0.25, 0.75], class1],
@@ -59,7 +54,7 @@ const trainingSetApproximationRING = [
 ];
 
 
-let trainingData = trainingSetApproximationXORMOD;
+let trainingData = trainingSetApproximationXOR;
 
 var neat;
 
@@ -75,14 +70,25 @@ function setup() {
         doCreateCanvas = false;
     }
 
+    for (let i = 0; i < 100; i++) {
+        let x = random();
+        let y = random();
+
+        let state = (x >= 0.5 ? 1 : 0) + (y >= 0.5 ? 1 : 0);
+        trainingSetApproximationXOR[trainingSetApproximationXOR.length] = [
+            [x, y], [state == 1 ? tt : tf]
+        ];
+    }
+
     neat = new NEAT({
         inputNodeCount: trainingData[0][0].length,
         outputNodeCount: trainingData[0][1].length,
         populationSize: 100,
         biasNode: true,
-        drawFrames: 60
+        drawFrames: 120
     });
     console.log(neat);
+
 
     frameRate(30);
 }
@@ -125,7 +131,7 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1000, 5e-4);
+    neat.runEpoch(inputs, outputs, 3000, 5e-3);
     p.calculateFitness(inputs, outputs);
 
     const minSize = Math.min(hw, hh);
@@ -207,7 +213,7 @@ function draw() {
         text(weights[i], left / 2, 850 + (i * 20));
     }
 
-    drawTrainingData(0, 400, left, 400, p);
+    //drawTrainingData(0, 400, left, 400, p);
     textAlign(LEFT);
 }
 
@@ -296,7 +302,7 @@ function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
     strokeWeight(1);
     noStroke();
 
-    const minRange = 0;
+    const minRange = -0.05;
     const maxRange = 1 - minRange;
     const totalRange = maxRange - minRange;
 
