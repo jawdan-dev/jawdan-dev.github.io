@@ -56,9 +56,9 @@ const setFillColor = value => {
 }
 
 
-const NEATspeciesThreshold = 1.2;
-const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 0.01; // 0.001
+let NEATspeciesThreshold = 1.2;
+let NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
+let NEATlearningRate = 0.01; // 0.001
 
 class NEAT {
     constructor(config) {
@@ -308,6 +308,93 @@ class NEAT {
         return species;
     }
 
+
+
+    iterateGeneration(inputs, targetOutputs) {
+        // Attain fitness
+        if (this.minFitness == undefined || this.maxFitness == undefined) {
+            const p = this.population[0];
+            p.calculateFitness(inputs, targetOutputs);
+
+            this.minFitness = p.fitness - 0.1;
+            this.maxFitness = p.fitness + 0.1;
+        }
+
+        const range = (this.maxFitness - this.minFitness) * 0.3;
+
+        this.population.forEach(p => {
+            p.calculateFitness(inputs, targetOutputs);
+
+            this.minFitness = Math.min(this.minFitness, p.fitness - range);
+            this.maxFitness = Math.max(this.maxFitness, p.fitness + range);
+        });
+        // Normalize Fitnesss (to be positive, without affecting results)
+        this.population.forEach(p => {
+            p.fitness = p.fitness - this.minFitness;
+        });
+
+        const species = this.getSpecies();
+        //console.log("Species Count:", species.length, species);
+        const getFromSpecies = (s) => {
+            const position = random() * s.totalFitness;
+            let offset = 0;
+
+            for (let i = 0; i < s.genome.length; i++) {
+                const p = this.population[s.genome[i]];
+
+                offset += p.fitness;
+                if (position <= offset) {
+                    return p.clone();
+                }
+            }
+            return this.population[s.genome[s.genome.length - 1]].clone();
+        }
+
+
+        const newPopulation = [];
+        for (let i = 0; i < species.length; i++) {
+            newPopulation[newPopulation.length] = this.population[species[i].genome[0]].clone();
+        }
+        while (newPopulation.length < this.population.length) {
+            const s = species[getRandomInt(species.length)];
+            const genome = s.genome;
+
+            if (s.totalFitness == undefined) {
+                s.totalFitness = 0;
+                genome.forEach(g => {
+                    s.totalFitness += this.population[g].fitness;
+                });
+                genome.forEach(g => {
+                    this.population[g].fitness /= s.totalFitness;
+                });
+            }
+
+            // Crossover
+            const g1 = getFromSpecies(s);
+            const g2 = getFromSpecies(s);
+
+            const g = NEAT.crossover(g1, g2);
+
+            // Mutate
+            g.mutateDefault();
+
+            // Add to new population.
+            newPopulation[newPopulation.length] = g;
+        }
+
+        // Start using the new population
+        this.population = newPopulation;
+
+        // Sort by fitness (just for visual analysis);
+        this.population.forEach(p => {
+            p.calculateFitness(inputs, targetOutputs);
+        });
+        this.population.sort((a, b) => {
+            return b.fitness - a.fitness;
+        });
+        this.generation++;
+    }
+
     runEpoch(inputs, targetOutputs, maxIterations, stopError) {
         if (this.stopped != undefined) {
             return;
@@ -330,7 +417,7 @@ class NEAT {
                 good[good.length] = i;
             }
         }
-        if (stopped > 0.1 * this.population.length && good.length > 0) {
+        if (stopped > 5 && good.length > 0) {
             let minTotalConnections = this.population[good[0]].getTotalConnections();
             for (let i = 1; i < good.length; i++) {
                 minTotalConnections = Math.min(minTotalConnections, this.population[good[i]].getTotalConnections());
@@ -968,13 +1055,11 @@ NEAT.Genome = class {
     calculateFitness(inputs, targetOutputs) {
         // Root Mean Squared Error
         const totalError = this.getTotalError(inputs, targetOutputs);
-        const totalConnections = this.getTotalConnections();
 
         // Scores
         const errorScore = -totalError;  // Fitness will be in negative space.
-        const connectionScore = 1;//Math.log(Math.pow((totalConnections * 0.1) + 1, 1)) + 1;
 
-        this.fitness = errorScore * connectionScore;
+        this.fitness = errorScore;
     }
 
     mutate(inputs, targetOutputs) {
@@ -1069,6 +1154,40 @@ NEAT.Genome = class {
             offset += potentialMutations[i].weight;
             if (chosen < offset) {
                 potentialMutations[i].function();
+                break;
+            }
+        }
+    }
+
+    mutateDefault() {
+        const nodeMutation = 0.1;
+        const connectionMutation = 0.2;
+        const weightMutation = 1 - (nodeMutation + connectionMutation);
+
+        const functions = [
+            [weightMutation, 0],
+            [nodeMutation, 1],
+            [connectionMutation, 2]
+        ];
+
+        let func = random();
+
+        for (let i = 0; i < functions.length; i++) {
+            func -= functions[i][0];
+            if (func <= 0) {
+                switch (functions[i][1]) {
+                    case 0: {
+                        this.connections[getRandomInt(this.connections.length)].weight += getWeight();
+                    } break
+                    case 1: {
+                        this.splitConnection(getRandomInt(this.connections.length));
+                    } break
+                    case 2: {
+                        let connections = this.getPotentialConnections();
+                        let c = connections[getRandomInt(connections.length)]
+                        this.addConnection(c.from, c.to);
+                    } break
+                }
                 break;
             }
         }
@@ -1274,7 +1393,7 @@ NEAT.Genome = class {
             }
         }
 
-        fill(255);
+        fill(textColor);
         text(this.fitness, x + 10, y + 10);
 
         let xFactor = w / h;

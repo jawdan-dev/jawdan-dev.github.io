@@ -54,7 +54,7 @@ const trainingSetApproximationRING = [
 ];
 
 
-let trainingData = trainingSetXOR;
+let trainingData = trainingSetApproximationXORMOD;
 let clampTop = false;
 
 var neat;
@@ -93,13 +93,10 @@ function setup() {
 
     const p = neat.population[0];
 
-    p.splitConnection(1);
-    p.connections[1].enabled = true;
-    p.connections[1].weight = 1;
-    p.connections[2].weight = 1;
-    p.splitConnection(4);
-    p.splitConnection(5);
-    p.addConnection(5, 6);
+    //p.splitConnection(1);
+    //p.splitConnection(2);
+    //p.addConnection(2, 4);
+    //p.addConnection(1, 5);
 
     frameRate(30);
 
@@ -111,6 +108,24 @@ let blocksPerFrame = 1000;
 let blockIndex = [];
 const deltaTarget = 1000 / 20;
 
+const textColor = 255;
+const backgroundColor = 255 - textColor;
+
+function getInputs() {
+    let inputs = [];
+    for (let i = 0; i < trainingData.length; i++) {
+        inputs[inputs.length] = trainingData[i][0];
+    }
+    return inputs;
+}
+function getOutputs() {
+    let outputs = [];
+    for (let i = 0; i < trainingData.length; i++) {
+        outputs[outputs.length] = trainingData[i][1];
+    }
+    return outputs;
+}
+
 function draw() {
 
     if (deltaTime > deltaTarget) {
@@ -121,14 +136,15 @@ function draw() {
     blocksPerFrame = Math.min(Math.max(blocksPerFrame, 100), 3000);
 
     background(11); //12
-    background(255); //12
+    background(backgroundColor); //12
 
     noStroke();
     fill(12);
     let s = Math.min(windowWidth, windowHeight);
 
 
-
+    const inputs = getInputs();
+    const outputs = getOutputs();
 
 
     let left = 200;
@@ -137,18 +153,9 @@ function draw() {
     let hh = windowHeight / 2;
 
 
-    let inputs = [];
-    let outputs = [];
-
-    for (let i = 0; i < trainingData.length; i++) {
-        inputs[inputs.length] = trainingData[i][0];
-        outputs[outputs.length] = trainingData[i][1];
-    }
-
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    return;
     neat.runEpoch(inputs, outputs, 5000, 5e-3);
     p.calculateFitness(inputs, outputs);
 
@@ -165,7 +172,7 @@ function draw() {
 
 
 
-    fill(255);
+    fill(textColor);
     noStroke();
     let textHeight = 20;
     let textSpacing = 20;
@@ -190,7 +197,7 @@ function draw() {
         let gx = 0, gy = 150, gw = left, gh = left;
 
         noStroke();
-        fill(255);
+        fill(textColor);
         text("Activation Function:", gx + gw / 2, gy - 5);
 
 
@@ -214,7 +221,7 @@ function draw() {
 
 
     noStroke();
-    fill(255);
+    fill(textColor);
     text("Training Table:", left / 2, 400 - 30);
 
     let weights = [];
@@ -228,10 +235,10 @@ function draw() {
     })
     for (let i = 0; i < weights.length && i < 20; i++) {
         setFillColor(weights[i]);
-        text(weights[i], left / 2, 850 + (i * 20));
+        text(weights[i], left / 2, 720 + (i * 20));
     }
 
-    drawTrainingData(0, 400, left, 400, p);
+    drawTrainingData(0, 400, left, 300, p);
     textAlign(LEFT);
 }
 
@@ -256,7 +263,7 @@ function drawTrainingData(dx, dy, dw, dh, p) {
     textSize(18);
 
     noStroke();
-    fill(255);
+    fill(0);
     for (let i = 0; i < columns; i++) {
         let x = mapRange(i, 0, columns, 0, dw);
 
@@ -320,8 +327,15 @@ function drawFunctionGraph(bx, by, bw, bh, p, imageVal = 0) {
     strokeWeight(1);
     noStroke();
 
-    const minRange = -0.05;
-    const maxRange = 1 - minRange;
+    let minRange = trainingData[0][0][0];
+    let maxRange = trainingData[0][0][0];
+    for (let i = 0; i < trainingData.length; i++) {
+        trainingData[i][0].forEach(v => {
+            minRange = Math.min(minRange, v - 0.2);
+            maxRange = Math.max(maxRange, v + 0.2);
+        });
+    }
+
     const totalRange = maxRange - minRange;
 
     const cut = 80;
