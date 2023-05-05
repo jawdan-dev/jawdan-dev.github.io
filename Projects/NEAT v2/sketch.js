@@ -2,9 +2,9 @@ const tt = 1;
 const tf = -1;
 
 const trainingSetXOR = [
+    [[tt, tf], [tt]],
     [[tt, tt], [tf]],
     [[tf, tf], [tf]],
-    [[tt, tf], [tt]],
     [[tf, tt], [tt]],
 ];
 
@@ -54,7 +54,7 @@ const trainingSetApproximationRING = [
 ];
 
 
-let trainingData = trainingSetApproximationXOR;
+let trainingData = trainingSetXOR;
 let clampTop = false;
 
 var neat;
@@ -87,12 +87,22 @@ function setup() {
         outputNodeCount: trainingData[0][1].length,
         populationSize: 100,
         biasNode: true,
-        drawFrames: 150
+        drawFrames: 200
     });
     console.log(neat);
 
+    const p = neat.population[0];
+
+    p.splitConnection(1);
+    p.connections[1].enabled = true;
+    p.connections[1].weight = 1;
+    p.connections[2].weight = 1;
+    p.splitConnection(4);
+    p.splitConnection(5);
+    p.addConnection(5, 6);
 
     frameRate(30);
+
 }
 
 var nextStep = false;
@@ -111,10 +121,15 @@ function draw() {
     blocksPerFrame = Math.min(Math.max(blocksPerFrame, 100), 3000);
 
     background(11); //12
+    background(255); //12
 
     noStroke();
     fill(12);
     let s = Math.min(windowWidth, windowHeight);
+
+
+
+
 
     let left = 200;
 
@@ -133,7 +148,8 @@ function draw() {
     const p = neat.population[0];
 
     p.draw(left, 0, hw, hh, trainingData[0][0]);
-    neat.runEpoch(inputs, outputs, 1400, 5e-3);
+    return;
+    neat.runEpoch(inputs, outputs, 5000, 5e-3);
     p.calculateFitness(inputs, outputs);
 
     const minSize = Math.min(hw, hh);

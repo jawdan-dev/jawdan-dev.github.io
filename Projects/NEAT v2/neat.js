@@ -58,7 +58,7 @@ const setFillColor = value => {
 
 const NEATspeciesThreshold = 1.2;
 const NEATc1 = 1, NEATc2 = 1, NEATc3 = 0.4;
-const NEATlearningRate = 1e-2;
+const NEATlearningRate = 0.01; // 0.001
 
 class NEAT {
     constructor(config) {
@@ -185,7 +185,10 @@ class NEAT {
         return (NEATc1 * excess) + (NEATc2 * disjoint) + (NEATc3 * weightDifference);
     }
 
-    crossover(g1, g2) {
+    static crossover(g1, g2) {
+        if (g1.neatInstance != g2.neatInstance) { return g1; }
+        const neatInstance = g1.neatInstance;
+
         const equalFitness = g1.fitness == g2.fitness;
         if (g1.fitness < g2.fitness) {
             let g = g1;
@@ -193,11 +196,11 @@ class NEAT {
             g2 = g;
         }
 
-        let child = new NEAT.Genome(this);
+        let child = new NEAT.Genome(neatInstance);
 
         let g1Index = 0,
             g2Index = 0;
-        const g = this.globalConnections;
+        const g = neatInstance.globalConnections;
         while (g1Index < g1.connections.length && g2Index < g2.connections.length) {
             const
                 gene1 = g1.connections[g1Index],
@@ -320,7 +323,7 @@ class NEAT {
             const {
                 stopped: backStopped,
                 iterations: it
-            } = e.backPropagate(inputs, targetOutputs, iterations, stopError);
+            } = e.backpropagate(inputs, targetOutputs, iterations, stopError);
 
             if (backStopped) {
                 stopped++;
@@ -430,7 +433,7 @@ class NEAT {
             const g1 = getFromSpecies(s);
             const g2 = getFromSpecies(s);
 
-            const g = this.crossover(g1, g2);
+            const g = NEAT.crossover(g1, g2);
 
             // Mutate
             g.mutate(inputs, targetOutputs);
@@ -887,7 +890,7 @@ NEAT.Genome = class {
         }
     }
 
-    backPropagate(inputs, targetOutputs, iterations, stopError = 1e-4, weightStop = 1e-8) {
+    backpropagate(inputs, targetOutputs, iterations, stopError = 1e-4, weightStop = 1e-8) {
         /*
                 if (draw) {
                     noStroke();
