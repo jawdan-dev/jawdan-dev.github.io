@@ -5,7 +5,7 @@ function setup() {
     canvas.position(0, 0);
     canvas.style('z-index', '-1')
 
-    c1 = new Square(100, 400, 60, 0.01);
+    c1 = new Square(100, 400, 60, 0.21);
     c2 = new Square(400, 400, 70, PI * 0.25);
 }
 
@@ -17,7 +17,11 @@ var target, offset;
 function draw() {
     background(50);
 
-    timeStep += deltaTime / 1000;
+    const delta = deltaTime / 1000;
+    timeStep += delta;
+
+    //if (c1.pos.y < 800) c1.pos.y += delta * 40;
+    //if (c2.pos.y < 800) c2.pos.y += delta * 40;
 
     stroke(200);
     if (mouseIsPressed) {
@@ -44,6 +48,9 @@ function draw() {
 
     if (c1.checkCollision(c2)) {
         stroke(50, 255, 50);
+        const res = c1.pos.subtract(c2.pos).normal().multiply(1);
+        c1.pos = c1.pos.add(res);
+        c2.pos = c2.pos.subtract(res);
     } else {
         stroke(255);
     }
