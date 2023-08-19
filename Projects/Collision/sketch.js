@@ -12,7 +12,7 @@ function setup() {
     c1.velocity.y = 200;
     c1.calculateBBox();
 
-    c2.velocity.x = 150g;
+    c2.velocity.x = 150;
     c2.velocity.y = -250;
     c2.calculateBBox();
 
@@ -60,7 +60,8 @@ function draw() {
     }
 
     if (collisionObjects[0].checkCollision(collisionObjects[1])) {
-
+        fill(255);
+        text("Hit!", 50, 50);
     }
 }
 
@@ -198,16 +199,15 @@ class Square {
         this.bbox.draw();
         other.bbox.draw();
 
-        if (!this.cheapCollisionCheck(other)) {
-            return false;
-        }
-        if (!this.cheapCollisionCheck(other)) {
-            return false;
-        }
-        return this.expensiveCollisionCheck(other, true);
+        return this.cheapCollisionCheck(other);
     }
 
     bboxCheck(other, from, to) {
+        const fromtos = [
+            this.getPoints(from), this.getPoints(to),
+            other.getPoints(from), other.getPoints(to)
+        ];
+
         const bb1 = new BBox(
             this.getPoints(from).concat(this.getPoints(to))
         );
@@ -218,10 +218,21 @@ class Square {
         bb1.draw();
         bb2.draw();
 
+        stroke(200, 20);
+        for (let i = 0; i < fromtos.length; i++) {
+            line(fromtos[i][0].x, fromtos[i][0].y, fromtos[i][1].x, fromtos[i][1].y);
+            line(fromtos[i][2].x, fromtos[i][2].y, fromtos[i][1].x, fromtos[i][1].y);
+            line(fromtos[i][2].x, fromtos[i][2].y, fromtos[i][3].x, fromtos[i][3].y);
+            line(fromtos[i][0].x, fromtos[i][0].y, fromtos[i][3].x, fromtos[i][3].y);
+        }
+
         return bb1.check(bb2);
     }
 
     bboxDepthCheck(other, depth, from = 0, to = 1) {
+        if (depth <= 0) {
+            return this.expensiveCollisionCheck(other, from);
+        }
         const bbcheck = this.bboxCheck(other, from, to);
         if (!bbcheck || depth <= 0) {
             return bbcheck;
@@ -234,19 +245,12 @@ class Square {
     }
 
     cheapCollisionCheck(other) {
-        return this.bboxDepthCheck(other, 12);
-
-        const checkDepth = 2;
-        for (let i = 0; i < checkDepth; i++) {
-
-        }
-
-        return other.bbox.check(this.bbox);
+        return this.bboxDepthCheck(other, 8);
     }
 
-    expensiveCollisionCheck(other, doDraw = false) {
-        const mp = this.getPoints();
-        const op = other.getPoints();
+    expensiveCollisionCheck(other, lerp, doDraw = false) {
+        const mp = this.getPoints(lerp);
+        const op = other.getPoints(lerp);
 
         const me0 = mp[1].subtract(mp[0]).normal().cross();
         const me1 = mp[2].subtract(mp[1]).normal().cross();
@@ -260,8 +264,8 @@ class Square {
 
         const checks = [me0, me1, oe0, oe1];
         for (let i = 0; i < checks.length; i++) {
-            const check1 = this.getMinMax(checks[i]);
-            const check2 = other.getMinMax(checks[i]);
+            const check1 = this.getMinMax(checks[i], lerp);
+            const check2 = other.getMinMax(checks[i], lerp);
 
             let isSeparated = check1.maxDot < check2.minDot || check2.maxDot < check1.minDot;
             if (doDraw) {
@@ -277,8 +281,8 @@ class Square {
         return true;
     }
 
-    getMinMax(axis) {
-        const points = this.getPoints();
+    getMinMax(axis, lerp) {
+        const points = this.getPoints(lerp);
 
         let minDot = points[0].dot(axis);
         let maxDot = points[0].dot(axis);
@@ -314,7 +318,7 @@ class Square {
     }
 
     draw() {
-        if (true && (this.velocity.x != 0 || this.velocity.y != 0)) {
+        if (false && (this.velocity.x != 0 || this.velocity.y != 0)) {
             stroke(255, 255, 50, 200);
             line(this.pos.x, this.pos.y, this.pos.x + this.velocity.x, this.pos.y + this.velocity.y);
             const p = this.getPoints(1);
