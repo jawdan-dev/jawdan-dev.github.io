@@ -5,13 +5,23 @@ function setup() {
     canvas.position(0, 0);
     canvas.style('z-index', '-1')
 
-    c1 = new Square(100, 400, 60, 0.21);
-    c2 = new Square(400, 400, 70, PI * 0.25);
+    let c1 = new Square(100, 400, 60, 0.2);
+    let c2 = new Square(400, 400, 90, PI * 0.34827);
+
+    c1.velocity.x = 200;
+    c1.velocity.y = 200;
+    c1.calculateBBox();
+
+    c2.velocity.x = 150g;
+    c2.velocity.y = -250;
+    c2.calculateBBox();
+
+    collisionObjects = [c1, c2];
 }
 
-var timeStep = 0;
-var c1, c2;
+var collisionObjects = [];
 
+var timeStep = 0;
 var target, offset;
 
 function draw() {
@@ -27,35 +37,31 @@ function draw() {
     if (mouseIsPressed) {
         const mpos = new Vec2(mouseX, mouseY);
         if (target == undefined) {
-            const c1m = c1.pos.subtract(mpos).magnitude() / c1.size;
-            const c2m = c2.pos.subtract(mpos).magnitude() / c2.size;
+            let best = Infinity;
+            for (let i = 0; i < collisionObjects.length; i++) {
+                const com = collisionObjects[i].pos.subtract(mpos).magnitude() / collisionObjects[i].size;
 
-            if (c1m <= 1 && c1m < c2m) {
-                target = c1;
-                offset = c1.pos.subtract(mpos);
-            } else if (c2m <= 1 && c2m < c1m) {
-                target = c2;
-                offset = c2.pos.subtract(mpos);
+                if (com <= 1 && com < best) {
+                    target = collisionObjects[i];
+                    offset = collisionObjects[i].pos.subtract(mpos);
+                }
             }
         }
         if (target != undefined) {
             target.pos = mpos.add(offset);
+            target.calculateBBox();
         }
     } else if (target != undefined) {
         target = undefined;
     }
 
-
-    if (c1.checkCollision(c2)) {
-        stroke(50, 255, 50);
-        const res = c1.pos.subtract(c2.pos).normal().multiply(1);
-        c1.pos = c1.pos.add(res);
-        c2.pos = c2.pos.subtract(res);
-    } else {
-        stroke(255);
+    for (let i = 0; i < collisionObjects.length; i++) {
+        collisionObjects[i].draw();
     }
-    c1.draw();
-    c2.draw();
+
+    if (collisionObjects[0].checkCollision(collisionObjects[1])) {
+
+    }
 }
 
 function drawArrow(from, to) {
@@ -101,43 +107,152 @@ function drawAxis(normal, offset) {
     strokeWeight(1);
 }
 
+class BBox {
+    constructor(points) {
+        if (Array.isArray(points)) {
+            this.minX = points[0].x;
+            this.minY = points[0].y;
+            this.maxX = points[0].x;
+            this.maxY = points[0].y;
+
+            for (let i = 1; i < points.length; i++) {
+                this.minX = Math.min(this.minX, points[i].x);
+                this.minY = Math.min(this.minY, points[i].y);
+                this.maxX = Math.max(this.maxX, points[i].x);
+                this.maxY = Math.max(this.maxY, points[i].y);
+            }
+        } else {
+            this.minX = points.x;
+            this.minY = points.y;
+            this.maxX = points.x;
+            this.maxY = points.y;
+        }
+    }
+
+    check(bbox) {
+        return (this.minX <= bbox.maxX && this.maxX >= bbox.minX) && (this.minY <= bbox.maxY && this.maxY >= bbox.minY);
+    }
+
+    draw() {
+        noFill();
+        stroke(200, 50, 50, 50);
+        rect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
+    }
+}
+
 class Square {
     constructor(x, y, s, r = 0) {
         this.pos = new Vec2(x, y);
         this.size = s;
         this.r = r;
+        this.velocity = new Vec2(0, 0);
+
+        this.bbox = new BBox(this.getPoints());
+    }
+
+    calculateBBox() {
+        this.bbox = new BBox(this.getPoints().concat(this.getPoints(1)));
     }
 
     checkCollision(other) {
         const mp = this.getPoints();
         const op = other.getPoints();
 
+        const normalSize = 20;
+
         stroke(50, 200, 50);
         const me0 = mp[1].subtract(mp[0]).normal().cross();
         const me1 = mp[2].subtract(mp[1]).normal().cross();
         const me01 = mp[0].add(mp[1]).divide(2);
         const me12 = mp[1].add(mp[2]).divide(2);
-        drawArrow(me01, me01.add(me0.inverse().multiply(50)));
-        drawArrow(me12, me12.add(me1.inverse().multiply(50)));
+        const me23 = mp[2].add(mp[3]).divide(2);
+        const me30 = mp[3].add(mp[0]).divide(2);
+        drawArrow(me01, me01.add(me0.inverse().multiply(normalSize)));
+        drawArrow(me12, me12.add(me1.inverse().multiply(normalSize)));
+        drawArrow(me23, me23.add(me0.multiply(normalSize)));
+        drawArrow(me30, me30.add(me1.multiply(normalSize)));
 
         stroke(50, 50, 200);
         const oe0 = op[1].subtract(op[0]).normal().cross();
         const oe1 = op[2].subtract(op[1]).normal().cross();
         const oe01 = op[0].add(op[1]).divide(2);
         const oe12 = op[1].add(op[2]).divide(2);
-        drawArrow(oe01, oe01.add(oe0.inverse().multiply(50)));
-        drawArrow(oe12, oe12.add(oe1.inverse().multiply(50)));
+        const oe23 = op[2].add(op[3]).divide(2);
+        const oe30 = op[3].add(op[0]).divide(2);
+        drawArrow(oe01, oe01.add(oe0.inverse().multiply(normalSize)));
+        drawArrow(oe12, oe12.add(oe1.inverse().multiply(normalSize)));
+        drawArrow(oe23, oe23.add(oe0.multiply(normalSize)));
+        drawArrow(oe30, oe30.add(oe1.multiply(normalSize)));
 
-        stroke(200, 50, 50, 100);
-        drawAxis(oe0.cross(), op[0]);
-        drawAxis(oe1.cross(), op[1]);
-        drawAxis(oe0.cross(), op[2]);
-        drawAxis(oe1.cross(), op[3]);
-        stroke(200, 50, 50, 100);
-        drawAxis(me0.cross(), mp[0]);
-        drawAxis(me1.cross(), mp[1]);
-        drawAxis(me0.cross(), mp[2]);
-        drawAxis(me1.cross(), mp[3]);
+        //stroke(200, 50, 50, 100);
+        //drawAxis(oe0.cross(), op[0]);
+        //drawAxis(oe1.cross(), op[1]);
+        //drawAxis(oe0.cross(), op[2]);
+        //drawAxis(oe1.cross(), op[3]);
+        //stroke(200, 50, 50, 100);
+        //drawAxis(me0.cross(), mp[0]);
+        //drawAxis(me1.cross(), mp[1]);
+        //drawAxis(me0.cross(), mp[2]);
+        //drawAxis(me1.cross(), mp[3]);
+
+        this.bbox.draw();
+        other.bbox.draw();
+
+        if (!this.cheapCollisionCheck(other)) {
+            return false;
+        }
+        if (!this.cheapCollisionCheck(other)) {
+            return false;
+        }
+        return this.expensiveCollisionCheck(other, true);
+    }
+
+    bboxCheck(other, from, to) {
+        const bb1 = new BBox(
+            this.getPoints(from).concat(this.getPoints(to))
+        );
+        const bb2 = new BBox(
+            other.getPoints(from).concat(other.getPoints(to))
+        );
+
+        bb1.draw();
+        bb2.draw();
+
+        return bb1.check(bb2);
+    }
+
+    bboxDepthCheck(other, depth, from = 0, to = 1) {
+        const bbcheck = this.bboxCheck(other, from, to);
+        if (!bbcheck || depth <= 0) {
+            return bbcheck;
+        }
+
+        const left = this.bboxDepthCheck(other, depth - 1, from, (from + to) / 2)
+        if (left) { return true; }
+        const right = this.bboxDepthCheck(other, depth - 1, (from + to) / 2, to)
+        return right;
+    }
+
+    cheapCollisionCheck(other) {
+        return this.bboxDepthCheck(other, 12);
+
+        const checkDepth = 2;
+        for (let i = 0; i < checkDepth; i++) {
+
+        }
+
+        return other.bbox.check(this.bbox);
+    }
+
+    expensiveCollisionCheck(other, doDraw = false) {
+        const mp = this.getPoints();
+        const op = other.getPoints();
+
+        const me0 = mp[1].subtract(mp[0]).normal().cross();
+        const me1 = mp[2].subtract(mp[1]).normal().cross();
+        const oe0 = op[1].subtract(op[0]).normal().cross();
+        const oe1 = op[2].subtract(op[1]).normal().cross();
+
 
         noStroke();
         stroke(0, 0, 255);
@@ -145,14 +260,16 @@ class Square {
 
         const checks = [me0, me1, oe0, oe1];
         for (let i = 0; i < checks.length; i++) {
-            const check1 = c1.getMinMax(checks[i]);
-            const check2 = c2.getMinMax(checks[i]);
+            const check1 = this.getMinMax(checks[i]);
+            const check2 = other.getMinMax(checks[i]);
 
-            fill(255);
             let isSeparated = check1.maxDot < check2.minDot || check2.maxDot < check1.minDot;
-            if (isSeparated) { fill(255, 50, 50); }
-            text(check1.minDot.toString() + " : " + check1.maxDot.toString(), 50, textOffset += 20);
-            text(check2.minDot.toString() + " : " + check2.maxDot.toString(), 50, textOffset += 20);
+            if (doDraw) {
+                fill(255);
+                if (isSeparated) { fill(255, 50, 50); }
+                text(check1.minDot.toString() + " : " + check1.maxDot.toString(), 50, textOffset += 20);
+                text(check2.minDot.toString() + " : " + check2.maxDot.toString(), 50, textOffset += 20);
+            }
 
             if (isSeparated)
                 return false;
@@ -178,7 +295,7 @@ class Square {
         };
     }
 
-    getPoints() {
+    getPoints(lerpAmount = 0) {
         const
             r0 = this.r + Math.PI * 0.25,
             r1 = this.r + Math.PI * 0.75,
@@ -186,16 +303,29 @@ class Square {
             r3 = this.r + Math.PI * 1.75;
 
         // This.size is not interpreted correctly here lol
+        const m = Math.sqrt(2) * this.size;
+        const offset = new Vec2(lerpAmount * this.velocity.x, lerpAmount * this.velocity.y);
         return [
-            new Vec2(this.pos.x + (Math.sin(r0) * this.size), this.pos.y + (Math.cos(r0) * this.size)),
-            new Vec2(this.pos.x + (Math.sin(r1) * this.size), this.pos.y + (Math.cos(r1) * this.size)),
-            new Vec2(this.pos.x + (Math.sin(r2) * this.size), this.pos.y + (Math.cos(r2) * this.size)),
-            new Vec2(this.pos.x + (Math.sin(r3) * this.size), this.pos.y + (Math.cos(r3) * this.size))
+            new Vec2(this.pos.x + (Math.sin(r0) * m), this.pos.y + (Math.cos(r0) * m)).add(offset),
+            new Vec2(this.pos.x + (Math.sin(r1) * m), this.pos.y + (Math.cos(r1) * m)).add(offset),
+            new Vec2(this.pos.x + (Math.sin(r2) * m), this.pos.y + (Math.cos(r2) * m)).add(offset),
+            new Vec2(this.pos.x + (Math.sin(r3) * m), this.pos.y + (Math.cos(r3) * m)).add(offset)
         ];
     }
 
     draw() {
+        if (true && (this.velocity.x != 0 || this.velocity.y != 0)) {
+            stroke(255, 255, 50, 200);
+            line(this.pos.x, this.pos.y, this.pos.x + this.velocity.x, this.pos.y + this.velocity.y);
+            const p = this.getPoints(1);
+            stroke(255, 50);
+            line(p[0].x, p[0].y, p[1].x, p[1].y);
+            line(p[2].x, p[2].y, p[1].x, p[1].y);
+            line(p[2].x, p[2].y, p[3].x, p[3].y);
+            line(p[0].x, p[0].y, p[3].x, p[3].y);
+        }
         const p = this.getPoints();
+        stroke(255);
         line(p[0].x, p[0].y, p[1].x, p[1].y);
         line(p[2].x, p[2].y, p[1].x, p[1].y);
         line(p[2].x, p[2].y, p[3].x, p[3].y);
